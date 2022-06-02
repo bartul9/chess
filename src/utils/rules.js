@@ -4,19 +4,27 @@ export const getRules = (board, moves, selectedField) => {
 
     const isWhite = color === "white";
 
+    const [ row, column ] = getSelectedFieldRowAndColumn(String(field));
+
     const rules = {
         pawn: {
             getPath: () => {
+
+                const getPawnPath = (n1, n2) => {
+                    const field = board[row + n1][column + n2];
+                    return field && field.piece && field.piece.color !== color;
+                }
+
                 const path = 
                 [
-                    [ board.piece && [-1, -1], [-1, 0], board.piece && [-1, 1]],
+                    [ getPawnPath(-1, -1) ? [-1, -1] : 0, !getPawnPath(-1, 0) ? [-1, 0] : 0, getPawnPath(-1, 1) ? [-1, 1] : 0],
                     [ 0, field, 0 ],
                     [ 0, 0, 0 ]
                 ];
 
                 const maxSteps = moves == 0 ? 2 : 1; 
 
-                return [isWhite ? [path[2], path[1], [ board.piece && [1, -1], [1, 0], board.piece && [1, 1]]] : path, maxSteps];
+                return [isWhite ? [path[2], path[1], [getPawnPath(1, -1) ? [1, -1] : 0, !getPawnPath(1, 0) ? [1, 0] : 0, getPawnPath(1, 1) ? [1, 1] : 0]] : path, maxSteps];
             }
         },
         rook: {

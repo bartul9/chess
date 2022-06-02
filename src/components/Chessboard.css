@@ -13,3 +13,7 @@
     align-items: center;
     justify-content: center;
 }
+
+.board {
+    margin: 5px;
+}

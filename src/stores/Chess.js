@@ -15,6 +15,8 @@ class Chess {
     whiteRemovedPieces = [];
     blackRemovedPieces = [];
 
+    winner = null;
+
     constructor() {
         makeAutoObservable(this);
     }
@@ -22,7 +24,7 @@ class Chess {
     onFieldClick = (field) => {
         this.clearBoard();
         
-        if (!field.piece) return;
+        if (!field.piece || (field.piece && field.piece.color !== this.currentPlayer)) return;
 
         this.selectedField = field;
 
@@ -34,11 +36,13 @@ class Chess {
         const removedPiece = moveTo(this.board, this.selectedField, newField);
 
         if (removedPiece) {
+            if (removedPiece.name === "king") this.winner = removedPiece.color.toUpperCase();
             this[removedPiece.color + "RemovedPieces"].push(removedPiece);
         }
 
         this.clearBoard();
 
+        this.currentPlayer = this.currentPlayer === "white" ? "black" : "white";
         this.moves++;
     }
 
