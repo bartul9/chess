@@ -14,21 +14,22 @@ const getRules = (board, moves, selectedField) => {
         pawn: {
             getPath: () => {
 
-                const canAttackCheck = (n1, n2) => {
+                const canAttackCheck = (n1, n2, isAttack = true) => {
                     const field = board[row + n1][column + n2];
-                    return field && field.piece && field.piece.color !== color;
+                    if (!isAttack) return !field.piece ? [n1, n2] : 0;
+                    return (field && field.piece && field.piece.color !== color) ? [n1, n2] : 0;
                 }
 
                 const path = 
                 [
-                    [ canAttackCheck(-1, -1) ? [-1, -1] : 0, !canAttackCheck(-1, 0) ? [-1, 0] : 0, canAttackCheck(-1, 1) ? [-1, 1] : 0],
+                    [ canAttackCheck(-1, -1), canAttackCheck(-1, 0, false), canAttackCheck(-1, 1)],
                     [ 0, field, 0 ],
                     [ 0, 0, 0 ]
                 ];
 
                 const maxSteps = moves == 0 ? 2 : 1; 
 
-                return [isWhite ? [path[2], path[1], [canAttackCheck(1, -1) ? [1, -1] : 0, !canAttackCheck(1, 0) ? [1, 0] : 0, canAttackCheck(1, 1) ? [1, 1] : 0]] : path, maxSteps];
+                return [isWhite ? [path[2], path[1], [canAttackCheck(1, -1), canAttackCheck(1, 0, false), canAttackCheck(1, 1)]] : path, maxSteps];
             }
         },
         rook: {

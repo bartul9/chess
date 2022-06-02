@@ -10,3 +10,12 @@
     align-items: center;
     justify-content: center;
 }
+
+.removedPiece{
+    /* transition: 200ms; */
+}
+
+.removedPiece:hover {
+    border-bottom: 3px solid lightgreen;
+    cursor: pointer;
+}

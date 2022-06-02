@@ -11,6 +11,7 @@ const Chessboard = observer(({ rootStore }) => {
     const { 
         moves,
         onFieldClick,
+        resetGame,
         movePiece,
         selectedField,
         currentPlayer,
@@ -35,23 +36,25 @@ const Chessboard = observer(({ rootStore }) => {
                         <div className="currentPlayerTitle">
                             <h3>Moves: {moves}</h3>
                         </div>
+
+                        <button onClick={resetGame}>Reset</button>
                     </div>
                     <div>
-                        <div>
+                        <div className="removedPieces">
                             {whiteRemovedPieces.length > 0 && whiteRemovedPieces.map(piece => {     
                                 const name = piece ? piece.name + (piece.color[0].toUpperCase() + piece.color.slice(1)) : "";
-                                return <img onClick={() => selectRemovedPiece(piece)} src={images[name]} alt="null" style={{ width: "50px"}} /> 
+                                return <img key={Math.random()} onClick={() => selectRemovedPiece(piece)} src={images[name]} alt="null" style={{ width: "50px"}} /> 
                             })}
                         </div>
                         <div className="board">
                             {
-                                board.map(row => <div key={Math.random()} className="row">{row.map(field => <TableField movePiece={movePiece} selected={selectedField && selectedField.field == field.field} onFieldClick={onFieldClick} key={field.field} field={field} />)}</div>)
+                                board.map(row => <div key={Math.random()} className="row">{row.map(field => <TableField key={field.field} movePiece={movePiece} selected={selectedField && selectedField.field == field.field} onFieldClick={onFieldClick} key={field.field} field={field} />)}</div>)
                             }
                         </div>
-                        <div>
+                        <div className="removedPieces">
                             {blackRemovedPieces.length > 0 && blackRemovedPieces.map(piece => {     
                                 const name = piece ? piece.name + (piece.color[0].toUpperCase() + piece.color.slice(1)) : "";
-                                return <img onClick={() => selectRemovedPiece(piece)} src={images[name]} alt="null" style={{ width: "50px"}} /> 
+                                return <img key={Math.random()} onClick={() => selectRemovedPiece(piece)} src={images[name]} alt="null" style={{ width: "50px"}} /> 
                             })}
                         </div>
                     </div>

@@ -17,7 +17,6 @@ class Chess {
     blackRemovedPieces = [];
 
     winner = null;
-    checkMate = null;
 
     constructor() {
         makeAutoObservable(this);
@@ -72,7 +71,7 @@ class Chess {
                 this[pawnOnLastRow.piece.color + "RemovedPieces"] = [...removedPieces.slice(0, removedPieces.indexOf(p)), ...removedPieces.slice(removedPieces.indexOf(p) + 1)];
             }
 
-            if (removedPieces.length > 0) {
+            if (removedPieces.length > 0 && removedPieces.some(piece => piece.name !== "pawn")) {
                 this.pawnChangeModal.open(
                     removedPieces, 
                     pawnOnLastRow, 
@@ -90,6 +89,16 @@ class Chess {
         }));
 
         this.selectedField = null;
+    }
+
+    resetGame = () => {
+        this.board = board;
+        this.moves = 0;
+        this.currentPlayer = "white";
+        this.selectedField = null;
+        this.whiteRemovedPieces = [];
+        this.blackRemovedPieces = [];
+        this.winner = null;
     }
 
 }
