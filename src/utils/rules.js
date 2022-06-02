@@ -1,14 +1,4 @@
 
-
-export const moveTo = (board, currentField, nextField) => {
-
-    const { piece } = currentField;
-
-
-    // return calculateAvailablePath(board, currentField)
-};
-
-
 export const getRules = (board, moves, selectedField) => {
     const { piece: { color, name }, field } = selectedField;
 
@@ -19,23 +9,23 @@ export const getRules = (board, moves, selectedField) => {
             getPath: () => {
                 const path = 
                 [
-                    [ board.piece || 0, 1, board.piece || 0],
+                    [ board.piece && [-1, -1], [-1, 0], board.piece && [-1, 1]],
                     [ 0, field, 0 ],
                     [ 0, 0, 0 ]
                 ];
 
                 const maxSteps = moves == 0 ? 2 : 1; 
 
-                return [!isWhite ? path : [path[2], path[1], path[0]], maxSteps];
+                return [isWhite ? [path[2], path[1], [ board.piece && [1, -1], [1, 0], board.piece && [1, 1]]] : path, maxSteps];
             }
         },
         rook: {
             getPath: () => {
                 const path = 
                 [
-                    [ 0, 1, 0 ],
-                    [ 1, field, 1 ],
-                    [ 0, 1, 0 ],
+                    [ 0, [-1, 0], 0 ],
+                    [ [0, -1], field, [0, 1] ],
+                    [ 0, [1, 0], 0 ],
                 ];
 
                 const maxSteps = 7;
@@ -47,14 +37,14 @@ export const getRules = (board, moves, selectedField) => {
             getPath: () => {
                 const path = 
                 [
-                    [ 0, 1, 0, 1, 0 ],
-                    [ 1, 0, 0, 0, 1 ],
+                    [ 0, [-2, -1], 0, [-2, 1], 0 ],
+                    [ [-1, -2], 0, 0, 0, [-1, 2] ],
                     [ 0, 0, field, 0, 0 ],
-                    [ 1, 0, 0, 0, 1 ],
-                    [ 0, 1, 0, 1, 0 ],
+                    [ [1, -2], 0, 0, 0, [1, 2] ],
+                    [ 0, [2, -1], 0, [2, 1], 0 ],
                 ];
 
-                const maxSteps = 3;
+                const maxSteps = 1;
 
                 return [path, maxSteps];
             }
@@ -63,9 +53,9 @@ export const getRules = (board, moves, selectedField) => {
             getPath: () => {
                 const path = 
                 [
-                    [ 1, 0, 1 ],
+                    [ [-1, -1], 0, [-1, 1] ],
                     [ 0, field, 0 ],
-                    [ 1, 0, 1 ],
+                    [ [1, -1], 0, [1, 1] ],
                 ];
 
                 const maxSteps = 7;
@@ -77,9 +67,9 @@ export const getRules = (board, moves, selectedField) => {
             getPath: () => {
                 const path = 
                 [
-                    [ 1, 1, 1 ],
-                    [ 1, field, 1 ],
-                    [ 1, 1, 1 ],
+                    [ [-1, -1], [1, 0], [-1, 1] ],
+                    [ [0, -1], field, [0, 1] ],
+                    [ [1, -1], [-1, 0], [1, 1] ],
                 ];
 
                 const maxSteps = 7;
@@ -91,9 +81,9 @@ export const getRules = (board, moves, selectedField) => {
             getPath: () => {
                 const path = 
                 [
-                    [ 1, 1, 1 ],
-                    [ 1, field, 1 ],
-                    [ 1, 1, 1 ],
+                    [ [-1, -1], [1, 0], [-1, 1] ],
+                    [ [0, -1], field, [0, 1] ],
+                    [ [1, -1], [-1, 0], [1, 1] ],
                 ];
 
                 const maxSteps = 1;
@@ -106,34 +96,68 @@ export const getRules = (board, moves, selectedField) => {
     return rules[name].getPath();
 };
 
-export const calculateAvailablePath = (board, rules, field) => {
-    const [ row, column ] = getSelectedFieldRowAndColumn(String(field));
+export const calculateAvailablePath = (board, moves, field) => {
+    const [ path, maxSteps ] = getRules(board, moves, field);
+    const [ row, column ] = getSelectedFieldRowAndColumn(String(field.field));
 
-    const [ path, maxSteps ] = rules;
+    path.forEach(arr => {
+        if (arr.every(f => f == 0)) return;
 
-    path.forEach((arr, ix)=> {
-        let nextRows = [];
+        arr.forEach(c => {
+            if (typeof c === "object") {
+                let currentRow = row;
+                let currentColumn = column;
 
-        if (!arr.includes(1)) return;
+                for (let step = 1; step <= maxSteps; step++) {
 
+                    if (currentRow + c[0] <= -1) return; 
+                    if (currentRow + c[0] >= 8) return;
+                    if (currentColumn + c[1] <= -1) return;
+                    if (currentColumn + c[1] >= 8) return;
 
-        // if (arr.includes(field)) maxSteps.forEach(step => board[row][column].isAvailable = true);
-        if (path.length == 3 && ix < 1) {
-            for (let step = 1; step <= maxSteps; step++) {
-                board[row - (step * 1)][column].isAvailable = true;
+                    const currentField = board[currentRow + c[0]][currentColumn + c[1]];
+
+                    if (currentField.piece != null) {
+                        if (currentField.piece.color !== field.piece.color) {
+                            currentField.canAttack = true;
+                        }
+
+                        step = maxSteps + 1;
+                        return;
+                    }
+
+                    currentField.isAvailable = true;
+
+                    currentRow = currentRow + c[0];
+                    currentColumn = currentColumn + c[1];
+                }
             }
-        } 
+        })
 
-        if (path.length == 3 && ix > 1) {
-            for (let step = 1; step <= maxSteps; step++) {
-                board[row + (step * 1)][column].isAvailable = true;
-            }
-        }
-        // if (path.length == 3 && ix < 1) maxSteps.forEach(step => board[row - (step * 100)][column].isAvailable = true);
-
-    })
-    debugger
+    });
 }
+
+export const moveTo = (board, oldField, newField) => {
+    const { canAttack, isAvailable } = newField;
+    const [ newFieldRow, newFieldColumn ] = getSelectedFieldRowAndColumn(String(newField.field));
+    const [ oldFieldRow, oldFieldColumn ] = getSelectedFieldRowAndColumn(String(oldField.field));
+
+    let removedPiece = null;
+
+    if (canAttack) {
+        removedPiece = newField.piece;
+        board[newFieldRow][newFieldColumn].piece = oldField.piece;
+        board[oldFieldRow][oldFieldColumn].piece = null;
+    }
+
+    if (isAvailable) {
+        board[newFieldRow][newFieldColumn].piece = oldField.piece;
+        board[oldFieldRow][oldFieldColumn].piece = null;
+    }
+    
+    return removedPiece;
+};
+
 
 function getSelectedFieldRowAndColumn(field) {
     return [field[0] - 1, field[1] - 1];

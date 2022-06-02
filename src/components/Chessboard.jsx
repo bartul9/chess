@@ -8,6 +8,7 @@ const Chessboard = observer(({ rootStore }) => {
 
     const { 
         onFieldClick,
+        movePiece,
         selectedField,
         board
     } = rootStore;
@@ -15,7 +16,7 @@ const Chessboard = observer(({ rootStore }) => {
     return (
         <div className="Chessboard">
             {
-                board.map(row => <div key={Math.random()} className="row">{row.map(field => <TableField selected={selectedField && selectedField.field == field.field} onFieldClick={onFieldClick} key={field.field} field={field} />)}</div>)
+                board.map(row => <div key={Math.random()} className="row">{row.map(field => <TableField movePiece={movePiece} selected={selectedField && selectedField.field == field.field} onFieldClick={onFieldClick} key={field.field} field={field} />)}</div>)
             }
         </div>
     )

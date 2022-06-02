@@ -1,9 +1,8 @@
 import { makeAutoObservable, toJS } from "mobx";
 
 import { board } from "../utils/board";
-import { calculateAvailablePath, getRules } from "../utils/rules";
+import { calculateAvailablePath, moveTo } from "../utils/rules";
 
-import { cloneDeep } from "lodash";
 
 class Chess {
 
@@ -12,6 +11,9 @@ class Chess {
     moves = 0;
     currentPlayer = "white";
     selectedField = null;
+
+    whiteRemovedPieces = [];
+    blackRemovedPieces = [];
 
     constructor() {
         makeAutoObservable(this);
@@ -24,17 +26,28 @@ class Chess {
 
         this.selectedField = field;
 
-        const rules = getRules(this.board, this.moves, field);
-        calculateAvailablePath(this.board, rules, field.field);
+        calculateAvailablePath(this.board, this.moves, field);
+    }
 
+    movePiece = (newField) => {
 
-        debugger
+        const removedPiece = moveTo(this.board, this.selectedField, newField);
 
-        this.moves ++;
+        if (removedPiece) {
+            this[removedPiece.color + "RemovedPieces"].push(removedPiece);
+        }
+
+        this.clearBoard();
+
+        this.moves++;
     }
 
     clearBoard() {
-        this.board.forEach(row => row.forEach(column => column.isAvailable = false));
+        this.board.forEach(row => row.forEach(column => {
+            column.isAvailable = false;
+            column.canAttack = false;
+            this.selectedField = null;
+        }));
     }
 
 }
