@@ -5,13 +5,13 @@ import "./TableFields.css";
 import * as images from "../assetes/pieces-icons";
 
 const TableField = observer(({ field, onFieldClick, movePiece, selected }) => {
-    const { piece, isAvailable, canAttack } = field;
+    const { piece, isAvailable, canAttack, checkMate } = field;
 
     const name = piece ? piece.name + (piece.color[0].toUpperCase() + piece.color.slice(1)) : "";
     const backgroundColor = canAttack ? "red" : (isAvailable ? "blue" : (selected ? "green" : (String(field.field)[2] == 2 ? "#9c9a9a" : "white")));
 
     return (
-        <div onClick={() => (isAvailable || canAttack) ? movePiece(field) : onFieldClick(field)} className="TableField" style={{ backgroundColor: backgroundColor }}>
+        <div onClick={() => (isAvailable || canAttack) ? movePiece(field) : onFieldClick(field)} className="TableField" style={{ backgroundColor: checkMate ? "gold" : backgroundColor }}>
 
             <div style={{ color: String(field.field)[2] == 2 ? "white" : "black" }}>
 

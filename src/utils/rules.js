@@ -4,27 +4,27 @@ export const getRules = (board, moves, selectedField) => {
 
     const isWhite = color === "white";
 
-    const [ row, column ] = getSelectedFieldRowAndColumn(String(field));
+    const [ row, column ] = getFieldRowAndColumn(String(field));
 
     const rules = {
         pawn: {
             getPath: () => {
 
-                const getPawnPath = (n1, n2) => {
+                const canAttackCheck = (n1, n2) => {
                     const field = board[row + n1][column + n2];
                     return field && field.piece && field.piece.color !== color;
                 }
 
                 const path = 
                 [
-                    [ getPawnPath(-1, -1) ? [-1, -1] : 0, !getPawnPath(-1, 0) ? [-1, 0] : 0, getPawnPath(-1, 1) ? [-1, 1] : 0],
+                    [ canAttackCheck(-1, -1) ? [-1, -1] : 0, !canAttackCheck(-1, 0) ? [-1, 0] : 0, canAttackCheck(-1, 1) ? [-1, 1] : 0],
                     [ 0, field, 0 ],
                     [ 0, 0, 0 ]
                 ];
 
                 const maxSteps = moves == 0 ? 2 : 1; 
 
-                return [isWhite ? [path[2], path[1], [getPawnPath(1, -1) ? [1, -1] : 0, !getPawnPath(1, 0) ? [1, 0] : 0, getPawnPath(1, 1) ? [1, 1] : 0]] : path, maxSteps];
+                return [isWhite ? [path[2], path[1], [canAttackCheck(1, -1) ? [1, -1] : 0, !canAttackCheck(1, 0) ? [1, 0] : 0, canAttackCheck(1, 1) ? [1, 1] : 0]] : path, maxSteps];
             }
         },
         rook: {
@@ -106,7 +106,7 @@ export const getRules = (board, moves, selectedField) => {
 
 export const calculateAvailablePath = (board, moves, field) => {
     const [ path, maxSteps ] = getRules(board, moves, field);
-    const [ row, column ] = getSelectedFieldRowAndColumn(String(field.field));
+    const [ row, column ] = getFieldRowAndColumn(String(field.field));
 
     path.forEach(arr => {
         if (arr.every(f => f == 0)) return;
@@ -126,7 +126,9 @@ export const calculateAvailablePath = (board, moves, field) => {
                     const currentField = board[currentRow + c[0]][currentColumn + c[1]];
 
                     if (currentField.piece != null) {
-                        if (currentField.piece.color !== field.piece.color) {
+                        const { color } = currentField.piece;
+
+                        if (color !== field.piece.color) {
                             currentField.canAttack = true;
                         }
 
@@ -146,27 +148,22 @@ export const calculateAvailablePath = (board, moves, field) => {
 }
 
 export const moveTo = (board, oldField, newField) => {
-    const { canAttack, isAvailable } = newField;
-    const [ newFieldRow, newFieldColumn ] = getSelectedFieldRowAndColumn(String(newField.field));
-    const [ oldFieldRow, oldFieldColumn ] = getSelectedFieldRowAndColumn(String(oldField.field));
+    const [ newFieldRow, newFieldColumn ] = getFieldRowAndColumn(String(newField.field));
+    const [ oldFieldRow, oldFieldColumn ] = getFieldRowAndColumn(String(oldField.field));
 
-    let removedPiece = null;
+    let removedPiece;
 
-    if (canAttack) {
+    if (newField.canAttack) {
         removedPiece = newField.piece;
-        board[newFieldRow][newFieldColumn].piece = oldField.piece;
-        board[oldFieldRow][oldFieldColumn].piece = null;
     }
 
-    if (isAvailable) {
-        board[newFieldRow][newFieldColumn].piece = oldField.piece;
-        board[oldFieldRow][oldFieldColumn].piece = null;
-    }
-    
+    board[newFieldRow][newFieldColumn].piece = oldField.piece;
+    board[oldFieldRow][oldFieldColumn].piece = null;
+
     return removedPiece;
 };
 
 
-function getSelectedFieldRowAndColumn(field) {
+export function getFieldRowAndColumn(field) {
     return [field[0] - 1, field[1] - 1];
 }
