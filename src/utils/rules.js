@@ -1,5 +1,9 @@
 
-export const getRules = (board, moves, selectedField) => {
+const getFieldRowAndColumn = (field) => {
+    return [field[0] - 1, field[1] - 1];
+}
+
+const getRules = (board, moves, selectedField) => {
     const { piece: { color, name }, field } = selectedField;
 
     const isWhite = color === "white";
@@ -162,8 +166,3 @@ export const moveTo = (board, oldField, newField) => {
 
     return removedPiece;
 };
-
-
-export function getFieldRowAndColumn(field) {
-    return [field[0] - 1, field[1] - 1];
-}

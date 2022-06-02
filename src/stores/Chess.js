@@ -1,7 +1,7 @@
 import { makeAutoObservable } from "mobx";
 
 import { board } from "../utils/board";
-import { calculateAvailablePath, getFieldRowAndColumn, moveTo } from "../utils/rules";
+import { calculateAvailablePath, moveTo } from "../utils/rules";
 import PawnChangeModalStore from "./PawnChangeModalStore";
 
 
@@ -26,6 +26,8 @@ class Chess {
     }
 
     onFieldClick = (field) => {
+        if (this.winner) return;
+
         this.clearBoard();
         
         if (!field.piece || (field.piece && field.piece.color !== this.currentPlayer)) return;
@@ -42,7 +44,9 @@ class Chess {
         const removedPiece = moveTo(this.board, this.selectedField, newField);
 
         if (removedPiece) {
-            if (removedPiece.name === "king") this.winner = this.currentPlayer.toUpperCase();
+            if (removedPiece.name === "king") {
+                this.winner = this.currentPlayer.toUpperCase();
+            }
             this[removedPiece.color + "RemovedPieces"].push(removedPiece);
         }
 
@@ -62,16 +66,19 @@ class Chess {
         const pawnOnLastRow = this.board[this.currentPlayer === "white" ? 7 : 0].find(field => field.piece && field.piece.name === "pawn");
 
         if (pawnOnLastRow) {
-            const [ row, column ] = getFieldRowAndColumn(String(pawnOnLastRow.field));
+            const removedPieces = this[pawnOnLastRow.piece.color + "RemovedPieces"];
 
-            const currentField = this.board[row][column];
-
-            const removedPieces = this[this.currentPlayer + "RemovedPieces"];
+            const onReturnPieceToField = (p) => {
+                this[pawnOnLastRow.piece.color + "RemovedPieces"] = [...removedPieces.slice(0, removedPieces.indexOf(p)), ...removedPieces.slice(removedPieces.indexOf(p) + 1)];
+            }
 
             if (removedPieces.length > 0) {
-                this.pawnChangeModal.open(removedPieces, currentField);
+                this.pawnChangeModal.open(
+                    removedPieces, 
+                    pawnOnLastRow, 
+                    (p) => onReturnPieceToField(p))
             } else {
-                currentField.piece = null;
+                pawnOnLastRow.piece = null;
             }
         }
     }

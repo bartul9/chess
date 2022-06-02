@@ -15,7 +15,12 @@ const PawnChangeModal = observer(({ store: {
             <div>
                 {removedPieces.map(piece => {     
                     const name = piece ? piece.name + (piece.color[0].toUpperCase() + piece.color.slice(1)) : "";
-                    return <img onClick={() => onSelectPieceToReturn(piece)} src={images[name]} alt="null" style={{ width: "50px"}} /> 
+                    return <img className="removedPiece" onClick={() => piece.name != "pawn" && onSelectPieceToReturn(piece)} src={images[name]} alt="null" style={{ 
+                        width: "50px",
+                        margin: "10px",
+                        padding: "4px",
+                        borderBottom: piece.name == "pawn" && "3px solid red"
+                    }} /> 
                 })}
             </div>
         </div>
