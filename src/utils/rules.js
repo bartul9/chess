@@ -143,7 +143,6 @@ export const calculateAvailablePath = (board, moves, field) => {
                             nextField.canAttack = true;
                         }
 
-                        step = maxSteps + 1;
                         return;
                     }
 
