@@ -17,7 +17,7 @@ const getRules = (board, moves, selectedField) => {
 
                 const canAttackCheck = (n1, n2, isAttack = true) => {
                     const nextField = board[row + n1][column + n2];
-                    return (nextField && nextField.piece && nextField.piece.color !== color) || (!isAttack && !nextField.piece) ? [n1, n2] : 0;
+                    return ((isAttack && nextField && nextField.piece && nextField.piece.color !== color) || (!isAttack && !nextField.piece)) ? [n1, n2] : 0;
                 }
 
                 const path = 
