@@ -16,9 +16,8 @@ const getRules = (board, moves, selectedField) => {
             getPath: () => {
 
                 const canAttackCheck = (n1, n2, isAttack = true) => {
-                    const field = board[row + n1][column + n2];
-                    if (!isAttack) return !field.piece ? [n1, n2] : 0;
-                    return (field && field.piece && field.piece.color !== color) ? [n1, n2] : 0;
+                    const nextField = board[row + n1][column + n2];
+                    return (nextField && nextField.piece && nextField.piece.color !== color) || (!isAttack && !nextField.piece) ? [n1, n2] : 0;
                 }
 
                 const path = 
@@ -116,38 +115,42 @@ export const calculateAvailablePath = (board, moves, field) => {
 
     // Loop over path arrays and for every direction in which piece can move, repeat that move until available steps for selected piece are maxed out, or until path hits other piece or border
     path.forEach(arr => {
+        // 0 means piece cant move in that direction
         if (arr.every(f => f == 0)) return;
 
         arr.forEach(c => {
             // c is array with two numbers representing direction in which piece can move, etc. [-1, -1] means current row - 1 and current column - 1
             if (typeof c === "object") {
+
                 // Selected piece position
                 let currentRow = row;
                 let currentColumn = column;
 
                 for (let step = 1; step <= maxSteps; step++) {
+                    const nextRow = currentRow + c[0];
+                    const nextColumn = currentColumn + c[1];
 
                     // If next row or column is beyond border return
-                    if (currentRow + c[0] <= -1 || currentRow + c[0] >= 8) return; 
-                    if (currentColumn + c[1] <= -1 || currentColumn + c[1] >= 8) return;
+                    if (nextRow <= -1 || nextRow >= 8) return; 
+                    if (nextColumn <= -1 || nextColumn >= 8) return;
 
-                    const currentField = board[currentRow + c[0]][currentColumn + c[1]];
+                    const nextField = board[nextRow][nextColumn];
 
-                    if (currentField.piece != null) {
-                        const { color } = currentField.piece;
+                    if (nextField.piece != null) {
+                        const { color } = nextField.piece;
 
                         if (color !== field.piece.color) {
-                            currentField.canAttack = true;
+                            nextField.canAttack = true;
                         }
 
                         step = maxSteps + 1;
                         return;
                     }
 
-                    currentField.isAvailable = true;
+                    nextField.isAvailable = true;
 
-                    currentRow = currentRow + c[0];
-                    currentColumn = currentColumn + c[1];
+                    currentRow = nextRow;
+                    currentColumn = nextColumn;
                 }
             }
         })
