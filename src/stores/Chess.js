@@ -24,6 +24,7 @@ class Chess {
         this.pawnChangeModal = new PawnChangeModalStore();
     }
 
+    // When clicked on any field, if piece exists on field calculate available path for selected piece, also clear board from previous paths
     onFieldClick = (field) => {
         if (this.winner) return;
 
@@ -36,6 +37,7 @@ class Chess {
         calculateAvailablePath(this.board, this.moves, field);
     }
 
+    // Move piece to selected field, if that field contains piece from other player, remove that piece from board
     movePiece = (newField) => {
         const { canAttack, isAvailable } = newField;
         if (!canAttack && !isAvailable) return;
@@ -61,6 +63,7 @@ class Chess {
         this.currentPlayer = this.currentPlayer === "white" ? "black" : "white";
     }
 
+    // Check if there are any pawns on last row for selected user, if true show modal in which user can select piece to return to board
     checkIfPawnOnLastRow() {
         const pawnOnLastRow = this.board[this.currentPlayer === "white" ? 7 : 0].find(field => field.piece && field.piece.name === "pawn");
 

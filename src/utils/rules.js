@@ -3,6 +3,7 @@ const getFieldRowAndColumn = (field) => {
     return [field[0] - 1, field[1] - 1];
 }
 
+// Returns directions and number of steps in which selected piece can move
 const getRules = (board, moves, selectedField) => {
     const { piece: { color, name }, field } = selectedField;
 
@@ -113,20 +114,22 @@ export const calculateAvailablePath = (board, moves, field) => {
     const [ path, maxSteps ] = getRules(board, moves, field);
     const [ row, column ] = getFieldRowAndColumn(String(field.field));
 
+    // Loop over path arrays and for every direction in which piece can move, repeat that move until available steps for selected piece are maxed out, or until path hits other piece or border
     path.forEach(arr => {
         if (arr.every(f => f == 0)) return;
 
         arr.forEach(c => {
+            // c is array with two numbers representing direction in which piece can move, etc. [-1, -1] means current row - 1 and current column - 1
             if (typeof c === "object") {
+                // Selected piece position
                 let currentRow = row;
                 let currentColumn = column;
 
                 for (let step = 1; step <= maxSteps; step++) {
 
-                    if (currentRow + c[0] <= -1) return; 
-                    if (currentRow + c[0] >= 8) return;
-                    if (currentColumn + c[1] <= -1) return;
-                    if (currentColumn + c[1] >= 8) return;
+                    // If next row or column is beyond border return
+                    if (currentRow + c[0] <= -1 || currentRow + c[0] >= 8) return; 
+                    if (currentColumn + c[1] <= -1 || currentColumn + c[1] >= 8) return;
 
                     const currentField = board[currentRow + c[0]][currentColumn + c[1]];
 

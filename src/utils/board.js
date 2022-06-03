@@ -1,5 +1,7 @@
 
 
+// board is array of arrays that contains objects representing every field on chessboard
+// fields are marked with 3 numbers, first one is row, second one is column, and third one is color of the field, etc. 1 = white, 2 = black
 export const board = [
     [
         { field: 111, piece: { name: "rook", color: "white" } }, 
