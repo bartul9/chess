@@ -4,7 +4,7 @@ const getFieldRowAndColumn = (field) => {
 }
 
 // Returns directions and number of steps in which selected piece can move
-const getRules = (board, moves, selectedField) => {
+const getRules = (board, selectedField) => {
     const { piece: { color, name }, field } = selectedField;
 
     const isWhite = color === "white";
@@ -20,6 +20,11 @@ const getRules = (board, moves, selectedField) => {
                     return ((isAttack && nextField && nextField.piece && nextField.piece.color !== color) || (!isAttack && !nextField.piece)) ? [n1, n2] : 0;
                 }
 
+                const isOnFirstFieldCheck = () => {
+                    const [ row ] = getFieldRowAndColumn(String(field));
+                    return (isWhite && row == 1) || (!isWhite && row == 6);
+                }
+
                 const path = 
                 [
                     [ canAttackCheck(-1, -1), canAttackCheck(-1, 0, false), canAttackCheck(-1, 1)],
@@ -27,7 +32,7 @@ const getRules = (board, moves, selectedField) => {
                     [ 0, 0, 0 ]
                 ];
 
-                const maxSteps = moves == 0 ? 2 : 1; 
+                const maxSteps = isOnFirstFieldCheck() ? 2 : 1; 
 
                 return [isWhite ? [path[2], path[1], [canAttackCheck(1, -1), canAttackCheck(1, 0, false), canAttackCheck(1, 1)]] : path, maxSteps];
             }
@@ -109,8 +114,8 @@ const getRules = (board, moves, selectedField) => {
     return rules[name].getPath();
 };
 
-export const calculateAvailablePath = (board, moves, field) => {
-    const [ path, maxSteps ] = getRules(board, moves, field);
+export const calculateAvailablePath = (board, field) => {
+    const [ path, maxSteps ] = getRules(board, field);
     const [ row, column ] = getFieldRowAndColumn(String(field.field));
 
     // Loop over path arrays and for every direction in which piece can move, repeat that move until available steps for selected piece are maxed out, or until path hits other piece or border
