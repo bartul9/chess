@@ -34,7 +34,7 @@ class Chess {
 
         this.selectedField = field;
 
-        calculateAvailablePath(this.board, field);
+        calculateAvailablePath(this.board, this.moves, field);
     }
 
     // Move piece to selected field, if that field contains piece from other player, remove that piece from board
