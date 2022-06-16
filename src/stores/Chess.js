@@ -1,7 +1,7 @@
 import { makeAutoObservable } from "mobx";
 
 import { board } from "../utils/board";
-import { calculateAvailablePath, moveTo } from "../utils/rules";
+import { calculateAvailablePath, calculatePossibleCheckmate, moveTo } from "../utils/rules";
 import PawnChangeModalStore from "./PawnChangeModalStore";
 
 
@@ -51,10 +51,13 @@ class Chess {
             this[removedPiece.color + "RemovedPieces"].push(removedPiece);
         }
 
-        this.clearBoard();
+        this.clearBoard(true);
+
+        if (this.winner) return;
 
         this.moves++;
 
+        calculatePossibleCheckmate(this.board, this.moves, this.board.map(row => row.filter(field => field.piece)).flat());
         this.checkIfPawnOnLastRow();
         this.onSwitchCurrentPlayer();
     }
@@ -85,10 +88,11 @@ class Chess {
         }
     }
 
-    clearBoard() {
-        this.board.forEach(row => row.forEach(column => {
-            column.isAvailable = false;
-            column.canAttack = false;
+    clearBoard(clearCheckmate) {
+        this.board.forEach(row => row.forEach(field => {
+            field.isAvailable = false;
+            field.canAttack = false;
+            if (clearCheckmate) field.checkmateColor = null;
         }));
 
         this.selectedField = null;

@@ -4,7 +4,7 @@ const getFieldRowAndColumn = (field) => {
 }
 
 // Returns directions and number of steps in which selected piece can move
-const getRules = (board, moves, selectedField) => {
+const getRules = (board, moves, selectedField, kingsFields) => {
     const { piece: { color, name }, field } = selectedField;
 
     const isWhite = color === "white";
@@ -17,6 +17,11 @@ const getRules = (board, moves, selectedField) => {
 
                 const canAttackCheck = (n1, n2, isAttack = true) => {
                     const nextField = board[row + n1][column + n2];
+
+                    if (isAttack && kingsFields && kingsFields.includes(nextField)) {
+                        return [n1, n2]
+                    }
+
                     return ((isAttack && nextField && nextField.piece && nextField.piece.color !== color) || (!isAttack && !nextField.piece)) ? [n1, n2] : 0;
                 }
 
@@ -109,9 +114,11 @@ const getRules = (board, moves, selectedField) => {
     return rules[name].getPath();
 };
 
-export const calculateAvailablePath = (board, moves, field) => {
+export const calculateAvailablePath = (board, moves, field, returnKingFields) => {
     const [ path, maxSteps ] = getRules(board, moves, field);
     const [ row, column ] = getFieldRowAndColumn(String(field.field));
+
+    const kingFields = [];
 
     // Loop over path arrays and for every direction in which piece can move, repeat that move until available steps for selected piece are maxed out, or until path hits other piece or border
     path.forEach(arr => {
@@ -139,14 +146,18 @@ export const calculateAvailablePath = (board, moves, field) => {
                     if (nextField.piece != null) {
                         const { color } = nextField.piece;
 
-                        if (color !== field.piece.color) {
+                        if (color !== field.piece.color && !returnKingFields) {
                             nextField.canAttack = true;
                         }
 
-                        return;
+                        if (!returnKingFields) return;
                     }
 
-                    nextField.isAvailable = true;
+                    if (returnKingFields) {
+                        kingFields.push(nextField);
+                    } else {
+                        nextField.isAvailable = true;
+                    }
 
                     currentRow = nextRow;
                     currentColumn = nextColumn;
@@ -155,6 +166,8 @@ export const calculateAvailablePath = (board, moves, field) => {
         })
 
     });
+
+    return kingFields;
 }
 
 export const moveTo = (board, oldField, newField) => {
@@ -172,3 +185,103 @@ export const moveTo = (board, oldField, newField) => {
 
     return removedPiece;
 };
+
+export const calculatePossibleCheckmate = (board, moves, fields) => {
+
+    const clearCalculatedPath = (path) => {
+        path.forEach(field => field.checkmateColor = null);
+    }
+
+    const whiteKing = fields.find(({ piece }) => piece.name === "king" && piece.color === "white");
+    const blackKing = fields.find(({ piece }) => piece.name === "king" && piece.color === "black");
+
+    const whiteKingFields = calculateAvailablePath(board, 1, whiteKing, true);
+    const blackKingFields = calculateAvailablePath(board, 1, blackKing, true);
+
+    fields.forEach(field => {
+        const kingsFields = field.piece.color === "white" ? blackKingFields : whiteKingFields;
+
+        const [ path, maxSteps ] = getRules(board, moves, field, kingsFields);
+        const [ row, column ] = getFieldRowAndColumn(String(field.field));
+
+        // Loop over path arrays and for every direction in which piece can move, repeat that move until available steps for selected piece are maxed out, or until path hits other piece or border
+        path.forEach(arr => {
+
+            arr.forEach(c => {
+                // c is array with two numbers representing direction in which piece can move, etc. [-1, -1] means current row - 1 and current column - 1
+                if (typeof c === "object") {
+
+                    // Selected piece position
+                    let currentRow = row;
+                    let currentColumn = column;
+
+                    const calculatedPath = [];
+                    const checkmateFields = [];
+
+                    let isCheckmate = false;
+
+
+                    for (let step = 1; step <= maxSteps; step++) {
+                        const nextRow = currentRow + c[0];
+                        const nextColumn = currentColumn + c[1];
+
+                        // If next row or column is beyond border return
+                        if (nextRow <= -1 || nextRow >= 8) {
+                            !isCheckmate && clearCalculatedPath(calculatedPath);
+                            return;
+                        } 
+                        if (nextColumn <= -1 || nextColumn >= 8) {
+                            !isCheckmate && clearCalculatedPath(calculatedPath);
+                            return;
+                        } 
+
+                        const nextField = board[nextRow][nextColumn];
+
+                        if (field.piece.name === "pawn" && kingsFields.includes(nextField)) debugger
+
+
+                        if (nextField.piece != null) {
+                            const { color } = nextField.piece;
+
+                            if (color !== field.piece.color && nextField.piece.name === "king") {
+                                nextField.checkmateColor = field.piece.color;
+                                calculatedPath.push(nextField);
+                                isCheckmate = true;
+
+                                if (step < maxSteps) {
+                                    const nextNextField = board[nextRow + c[0]][nextColumn+ c[1]];
+
+                                    if (nextNextField && !nextNextField.piece && kingsFields.includes(nextNextField)) {
+                                        nextNextField.checkmateColor = field.piece.color;
+                                        calculatedPath.push(nextNextField);
+                                        return;
+                                    }
+                                }
+                            } else {
+                                if (!isCheckmate) clearCalculatedPath(calculatedPath);
+                                return;
+                            }
+                        }
+
+                        if (kingsFields.includes(nextField)) {
+                            nextField.checkmateColor = field.piece.color;
+                            checkmateFields.push(nextField);
+                        }
+
+                        if (step == maxSteps && !isCheckmate) {
+                            return clearCalculatedPath(calculatedPath);
+                        }
+
+                        if (!nextField.checkmateColor) {
+                            nextField.checkmateColor = field.piece.color;
+                            calculatedPath.push(nextField);
+                        }
+                        
+                        currentRow = nextRow;
+                        currentColumn = nextColumn;
+                    }
+                }
+            })
+        });
+    })
+}
