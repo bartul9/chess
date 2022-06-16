@@ -15,7 +15,8 @@
 }
 
 .board {
-    margin: 5px;
+    /* margin: 3px; */
+    border: 10px solid black;
 }
 
 .boardContainer {
@@ -24,14 +25,13 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-evenly;
-
 }
 
 .infoContainer {
     width: 350px;
     height: 400px;
     padding: 25px;
-    border: 1px solid silver;
+    border: 3px solid black;
 }
 
 .currentPlayerTitle {

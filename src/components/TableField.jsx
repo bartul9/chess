@@ -5,19 +5,20 @@ import "./TableFields.css";
 import * as images from "../assetes/pieces-icons";
 
 const TableField = observer(({ field, onFieldClick, movePiece, selected }) => {
-    const { piece, isAvailable, canAttack, checkmateColor } = field;
+    const { piece, isAvailable, canAttack, checkmateColor, mustMoveKing } = field;
 
     const name = piece ? piece.name + (piece.color[0].toUpperCase() + piece.color.slice(1)) : "";
-    const backgroundColor = canAttack ? "red" : (isAvailable ? "blue" : (selected ? "green" : (String(field.field)[2] == 2 ? "#9c9a9a" : "white")));
 
     return (
-        <div onClick={() => (isAvailable || canAttack) ? movePiece(field) : onFieldClick(field)} className="TableField" style={{ backgroundColor: checkmateColor == "white" ? "gold" : (checkmateColor == "black" ? "orange" : backgroundColor) }}>
+        <div onClick={() => (isAvailable || canAttack) ? movePiece(field) : onFieldClick(field)} className="TableField" style={{ backgroundColor: mustMoveKing ? (checkmateColor === "black" ? "orange" : "gold") : (canAttack ? "#FF6347fa" : (selected ? "#228B22aa" : (String(field.field)[2] == 2 ? "#9c9a9a" : "white")))}}>
 
-            <div style={{ color: checkmateColor ? "black" : (String(field.field)[2] == 2 || isAvailable || canAttack || selected) ? "white" : "black" }}>
+            <div>
 
-                {piece && <img src={images[name]} alt="null" style={{ width: "50px"}} />}
+                {piece && <img src={images[name]} alt="null" style={{ width: "50px" }} />}
+
+                {<div style={{ position: "absolute", width: 20, height: 20, borderRadius: "50%", backgroundColor: mustMoveKing ? "" : (checkmateColor == "white" ? "gold" : (checkmateColor == "black" ? "orange" : (isAvailable ? "#4169E1" : "")))}}></div>}
                 
-                <span className="boardNum">{String(field.field)[0] + mapFieldNumToLetter(String(field.field)[1])}</span>
+                <span style={{ color: checkmateColor ? "black" : (String(field.field)[2] == 2 || canAttack || selected) ? "white" : "black" }} className="boardNum">{String(field.field)[0] + mapFieldNumToLetter(String(field.field)[1])}</span>
 
             </div>
 

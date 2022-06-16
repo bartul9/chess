@@ -16,9 +16,16 @@ const getRules = (board, moves, selectedField, kingsFields) => {
             getPath: () => {
 
                 const canAttackCheck = (n1, n2, isAttack = true) => {
-                    const nextField = board[row + n1][column + n2];
+                    const nextRow = row + n1;
+                    const nextColumn = column + n2;
 
-                    if (isAttack && kingsFields && kingsFields.includes(nextField)) {
+                    // If next row or column is beyond border return
+                    if (nextRow <= -1 || nextRow >= 8) return; 
+                    if (nextColumn <= -1 || nextColumn >= 8) return;
+
+                    const nextField = board[nextRow][nextColumn];
+
+                    if (isAttack && nextField && kingsFields && kingsFields.includes(nextField)) {
                         return [n1, n2]
                     }
 
@@ -114,11 +121,14 @@ const getRules = (board, moves, selectedField, kingsFields) => {
     return rules[name].getPath();
 };
 
-export const calculateAvailablePath = (board, moves, field, returnKingFields) => {
+export const calculateAvailablePath = (board, moves, field, returnKingFields, enemyPieces) => {
     const [ path, maxSteps ] = getRules(board, moves, field);
     const [ row, column ] = getFieldRowAndColumn(String(field.field));
 
-    const kingFields = [];
+    const calculatedData = {
+        kingFields: [],
+        canPieceAttack: false
+    }
 
     // Loop over path arrays and for every direction in which piece can move, repeat that move until available steps for selected piece are maxed out, or until path hits other piece or border
     path.forEach(arr => {
@@ -147,15 +157,24 @@ export const calculateAvailablePath = (board, moves, field, returnKingFields) =>
                         const { color } = nextField.piece;
 
                         if (color !== field.piece.color && !returnKingFields) {
-                            nextField.canAttack = true;
+
+                            if (enemyPieces && enemyPieces.includes(nextField)) {
+                                calculatedData.canPieceAttack = true;
+                            } 
+                            
+                            if(!enemyPieces) {
+                                nextField.canAttack = true;
+                            }
                         }
 
                         if (!returnKingFields) return;
                     }
 
                     if (returnKingFields) {
-                        kingFields.push(nextField);
-                    } else {
+                        calculatedData.kingFields.push(nextField);
+                    } 
+
+                    if(!enemyPieces && !returnKingFields) {
                         nextField.isAvailable = true;
                     }
 
@@ -167,7 +186,7 @@ export const calculateAvailablePath = (board, moves, field, returnKingFields) =>
 
     });
 
-    return kingFields;
+    return calculatedData;
 }
 
 export const moveTo = (board, oldField, newField) => {
@@ -192,16 +211,34 @@ export const calculatePossibleCheckmate = (board, moves, fields) => {
         path.forEach(field => field.checkmateColor = null);
     }
 
-    const whiteKing = fields.find(({ piece }) => piece.name === "king" && piece.color === "white");
-    const blackKing = fields.find(({ piece }) => piece.name === "king" && piece.color === "black");
+    const checkIfCheckMate = (kingsFields, isCheckmate, color) => {
+        const emptyFields = kingsFields.filter(field => !field.piece);
+        const enemyPieces = kingsFields.filter(field => field.piece && field.piece.color !== color);
+        const friendlyPieces = kingsFields.filter(field => field.piece && field.piece.color === color);
 
-    const whiteKingFields = calculateAvailablePath(board, 1, whiteKing, true);
-    const blackKingFields = calculateAvailablePath(board, 1, blackKing, true);
+        const canFriendAttack = friendlyPieces.reduce((acc, field) => {
+            const { canAttack } = calculateAvailablePath(board, moves, field, null, enemyPieces);
+            canAttack && acc.push(canAttack);
+            return acc;
+        }, []);
+
+        const emptyFieldsCheckmate = emptyFields.length > 0 ? emptyFields.every(field => field.checkmateColor) : true;
+
+        return isCheckmate && emptyFieldsCheckmate && canFriendAttack.length === 0 && enemyPieces.length === 0;
+    }
+
+    const whiteKing = fields.find(({ piece: { name, color } }) => name === "king" && color === "white");
+    const blackKing = fields.find(({ piece: { name, color } }) => name === "king" && color === "black");
+
+    const { kingFields: whiteKingFields } = calculateAvailablePath(board, 1, whiteKing, true);
+    const { kingFields: blackKingFields } = calculateAvailablePath(board, 1, blackKing, true);
 
     fields.forEach(field => {
         const kingsFields = field.piece.color === "white" ? blackKingFields : whiteKingFields;
 
-        const [ path, maxSteps ] = getRules(board, moves, field, kingsFields);
+        const checkmateColor = field.piece.color === "white" ? "black" : "white";
+
+        const [ path, maxSteps ] = getRules(board, moves, field);
         const [ row, column ] = getFieldRowAndColumn(String(field.field));
 
         // Loop over path arrays and for every direction in which piece can move, repeat that move until available steps for selected piece are maxed out, or until path hits other piece or border
@@ -211,15 +248,16 @@ export const calculatePossibleCheckmate = (board, moves, fields) => {
                 // c is array with two numbers representing direction in which piece can move, etc. [-1, -1] means current row - 1 and current column - 1
                 if (typeof c === "object") {
 
+                    if (field.piece.name === "pawn" && arr.indexOf(c) === 1) return;
+
                     // Selected piece position
                     let currentRow = row;
                     let currentColumn = column;
 
-                    const calculatedPath = [];
-                    const checkmateFields = [];
-
                     let isCheckmate = false;
 
+                    const calculatedPath = [];
+                    const checkmateFields = [];
 
                     for (let step = 1; step <= maxSteps; step++) {
                         const nextRow = currentRow + c[0];
@@ -227,53 +265,62 @@ export const calculatePossibleCheckmate = (board, moves, fields) => {
 
                         // If next row or column is beyond border return
                         if (nextRow <= -1 || nextRow >= 8) {
-                            !isCheckmate && clearCalculatedPath(calculatedPath);
+                            !isCheckmate && clearCalculatedPath([...calculatedPath]);
                             return;
                         } 
                         if (nextColumn <= -1 || nextColumn >= 8) {
-                            !isCheckmate && clearCalculatedPath(calculatedPath);
+                            !isCheckmate && clearCalculatedPath([...calculatedPath]);
                             return;
                         } 
 
                         const nextField = board[nextRow][nextColumn];
 
-                        if (field.piece.name === "pawn" && kingsFields.includes(nextField)) debugger
-
-
                         if (nextField.piece != null) {
-                            const { color } = nextField.piece;
+                            const { color, name } = nextField.piece;
 
-                            if (color !== field.piece.color && nextField.piece.name === "king") {
-                                nextField.checkmateColor = field.piece.color;
+                            if (color !== field.piece.color && name === "king") {
+                                nextField.checkmateColor = checkmateColor;
                                 calculatedPath.push(nextField);
                                 isCheckmate = true;
+                                nextField.mustMoveKing = true;
 
                                 if (step < maxSteps) {
-                                    const nextNextField = board[nextRow + c[0]][nextColumn+ c[1]];
+                                    const nextNextRow = nextRow + c[0];
+                                    const nextNextColumn = nextColumn + c[1];
+
+                                    // If next row or column is beyond border return
+                                    if (nextNextRow <= -1 || nextNextRow >= 8) {
+                                        return;
+                                    } 
+                                    if (nextNextColumn <= -1 || nextNextColumn >= 8) {
+                                        return;
+                                    } 
+
+                                    const nextNextField = board[nextNextRow][nextNextColumn];
 
                                     if (nextNextField && !nextNextField.piece && kingsFields.includes(nextNextField)) {
-                                        nextNextField.checkmateColor = field.piece.color;
-                                        calculatedPath.push(nextNextField);
+                                        nextNextField.checkmateColor = checkmateColor;
+                                        checkmateFields.push(nextNextField);
                                         return;
                                     }
                                 }
                             } else {
-                                if (!isCheckmate) clearCalculatedPath(calculatedPath);
+                                if (!isCheckmate) clearCalculatedPath([...calculatedPath]);
                                 return;
                             }
                         }
 
                         if (kingsFields.includes(nextField)) {
-                            nextField.checkmateColor = field.piece.color;
+                            nextField.checkmateColor = checkmateColor;
                             checkmateFields.push(nextField);
                         }
 
                         if (step == maxSteps && !isCheckmate) {
-                            return clearCalculatedPath(calculatedPath);
+                            return clearCalculatedPath([...calculatedPath]);
                         }
 
                         if (!nextField.checkmateColor) {
-                            nextField.checkmateColor = field.piece.color;
+                            nextField.checkmateColor = checkmateColor;
                             calculatedPath.push(nextField);
                         }
                         
@@ -284,4 +331,10 @@ export const calculatePossibleCheckmate = (board, moves, fields) => {
             })
         });
     })
+
+
+    return {
+        white: checkIfCheckMate(whiteKingFields, whiteKing.mustMoveKing, "white"),
+        black: checkIfCheckMate(blackKingFields, blackKing.mustMoveKing, "black"),
+    }
 }

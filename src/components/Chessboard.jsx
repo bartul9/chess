@@ -20,7 +20,8 @@ const Chessboard = observer(({ rootStore }) => {
         blackRemovedPieces,
         selectRemovedPiece,
         pawnChangeModal,
-        winner
+        winner,
+        checkmate
     } = rootStore;
 
     return (
@@ -29,7 +30,9 @@ const Chessboard = observer(({ rootStore }) => {
                 {pawnChangeModal.removedPieces ? <PawnChangeModal store={pawnChangeModal} /> : 
                 <div className="boardContainer">
                     <div className="infoContainer">
-                        {winner && <h1>Winner is {winner} player</h1>}
+                        <h1>Chess</h1>
+                        {winner && <h2>Winner is {winner} player</h2>}
+                        {checkmate && <h2>Checkmate {checkmate}</h2>}
                         <div className="currentPlayerTitle">
                             <h3>Current player:</h3> <h2 style={{ marginLeft: "10px" }}>{currentPlayer.toUpperCase()}</h2>
                         </div>
@@ -46,10 +49,14 @@ const Chessboard = observer(({ rootStore }) => {
                                 return <img key={Math.random()} onClick={() => selectRemovedPiece(piece)} src={images[name]} alt="null" style={{ width: "50px"}} /> 
                             })}
                         </div>
-                        <div className="board">
-                            {
-                                board.map(row => <div key={Math.random()} className="row">{row.map(field => <TableField key={field.field} movePiece={movePiece} selected={selectedField && selectedField.field == field.field} onFieldClick={onFieldClick} field={field} />)}</div>)
-                            }
+                        <div style={{ border: "16px solid silver" }}>
+                            <div style={{ border: "13px solid #454545" }}>
+                                <div className="board">
+                                    {
+                                        board.map(row => <div key={Math.random()} className="row">{row.map(field => <TableField key={field.field} movePiece={movePiece} selected={selectedField && selectedField.field == field.field} onFieldClick={onFieldClick} field={field} />)}</div>)
+                                    }
+                                </div>
+                            </div>
                         </div>
                         <div className="removedPieces">
                             {blackRemovedPieces.length > 0 && blackRemovedPieces.map(piece => {     

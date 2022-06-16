@@ -16,6 +16,8 @@ class Chess {
     whiteRemovedPieces = [];
     blackRemovedPieces = [];
 
+    checkmate = null;
+
     winner = null;
 
     constructor() {
@@ -26,7 +28,7 @@ class Chess {
 
     // When clicked on any field, if piece exists on field calculate available path for selected piece, also clear board from previous paths
     onFieldClick = (field) => {
-        if (this.winner) return;
+        if (this.winner || this.checkmate) return;
 
         this.clearBoard();
         
@@ -53,11 +55,22 @@ class Chess {
 
         this.clearBoard(true);
 
-        if (this.winner) return;
+        if (this.winner || this.checkmate) return;
 
         this.moves++;
 
-        calculatePossibleCheckmate(this.board, this.moves, this.board.map(row => row.filter(field => field.piece)).flat());
+        const { white, black } = calculatePossibleCheckmate(this.board, this.moves, this.board.map(row => row.filter(field => field.piece)).flat());
+
+        if (white) {
+            this.checkmate = "White";
+            return;
+        }
+
+        if (black) {
+            this.checkmate = "Black";
+            return;
+        }
+
         this.checkIfPawnOnLastRow();
         this.onSwitchCurrentPlayer();
     }
@@ -92,7 +105,10 @@ class Chess {
         this.board.forEach(row => row.forEach(field => {
             field.isAvailable = false;
             field.canAttack = false;
-            if (clearCheckmate) field.checkmateColor = null;
+            if (clearCheckmate) {
+                field.checkmateColor = null;
+                if (field.mustMoveKing) field.mustMoveKing = null;
+            };
         }));
 
         this.selectedField = null;
@@ -106,6 +122,7 @@ class Chess {
         this.whiteRemovedPieces = [];
         this.blackRemovedPieces = [];
         this.winner = null;
+        this.checkmate = null;
     }
 
 }
