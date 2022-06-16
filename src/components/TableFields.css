@@ -1,8 +1,8 @@
 
 
 .TableField {
-    height: 90px;
-    width: 90px;
+    height: 85px;
+    width: 85px;
     transition: 200ms all ease;
     display: flex;
     flex-direction: column;
@@ -28,4 +28,8 @@
 }
 
 .TableField:hover {
+}
+
+.pieces {
+    transition: 1s all ease;
 }

@@ -29,9 +29,13 @@
 
 .infoContainer {
     width: 350px;
-    height: 400px;
+    height: 700px;
     padding: 25px;
-    border: 3px solid black;
+    /* border: 3px solid black; */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    border-radius: 10px;
 }
 
 .currentPlayerTitle {
@@ -47,4 +51,44 @@
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
+}
+
+.legend {
+    height: 300px;
+    width: fit-content;
+}
+
+.legendDivs {
+    margin: 5px;
+    margin-left: 0px;
+    height: 30px;
+    width: 200px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 3px;
+    padding-left: 0px;
+}
+
+.legendColors {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background-color: red;
+    margin-right: 15px;
+}
+
+.resetBtn {
+    height: 40px;
+    background-color: #4169E1;
+    border-radius: 10px;
+    outline: none;
+    border: none;
+    color: white;
+    font-size: 16px;
+}
+
+.currentPlayerText {
+    font-size: 19px;
 }

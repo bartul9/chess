@@ -14,11 +14,11 @@ const TableField = observer(({ field, onFieldClick, movePiece, selected }) => {
 
             <div>
 
-                {piece && <img src={images[name]} alt="null" style={{ width: "50px" }} />}
+                {piece && <img className="pieces" src={images[name]} alt="null" style={{ width: "50px" }} />}
 
                 {<div style={{ position: "absolute", width: 20, height: 20, borderRadius: "50%", backgroundColor: mustMoveKing ? "" : (checkmateColor == "white" ? "gold" : (checkmateColor == "black" ? "orange" : (isAvailable ? "#4169E1" : "")))}}></div>}
                 
-                <span style={{ color: checkmateColor ? "black" : (String(field.field)[2] == 2 || canAttack || selected) ? "white" : "black" }} className="boardNum">{String(field.field)[0] + mapFieldNumToLetter(String(field.field)[1])}</span>
+                <span style={{ color: String(field.field)[2] == 2 ? "white" : "black" }} className="boardNum">{String(field.field)[0] + mapFieldNumToLetter(String(field.field)[1])}</span>
 
             </div>
 
