@@ -1,14 +1,13 @@
 import { makeAutoObservable } from "mobx";
 
 import { board } from "../utils/board";
-import { calculateAvailablePath, checkIfCheckmate, moveTo } from "../utils/rules";
+import { calculateAvailablePath, checkIfCheckmate, moveTo, checkIfPawnOnLastRow } from "../utils/rules";
 import PawnChangeModalStore from "./PawnChangeModalStore";
 
 
 class Chess {
 
     board = board;
-
     moves = 0;
     currentPlayer = "white";
     selectedField = null;
@@ -17,7 +16,6 @@ class Chess {
     blackRemovedPieces = [];
 
     checkmate = null;
-
     winner = null;
 
     constructor() {
@@ -55,52 +53,22 @@ class Chess {
 
         this.clearBoard(true);
 
-        if (this.winner || this.checkmate) return;
+        if (this.winner) return;
 
         this.moves++;
 
         const { checkmateWhite, checkmateBlack } = checkIfCheckmate(this.board, this.currentPlayer);
 
-        if (checkmateWhite) {
-            this.checkmate = "White";
-            this.currentPlayer = "Black"
-            return;
+        if (checkmateWhite || checkmateBlack) {
+            this.checkmate = checkmateWhite || checkmateBlack;
         }
 
-        if (checkmateBlack) {
-            this.checkmate = "Black";
-            this.currentPlayer = "White"
-            return;
-        }
-
-        this.checkIfPawnOnLastRow();
+        checkIfPawnOnLastRow(this, this.board, this.currentPlayer, this.pawnChangeModal);
         this.onSwitchCurrentPlayer();
     }
 
     onSwitchCurrentPlayer() {
         this.currentPlayer = this.currentPlayer === "white" ? "black" : "white";
-    }
-
-    // Check if there are any pawns on last row for selected user, if true show modal in which user can select piece to return to board
-    checkIfPawnOnLastRow() {
-        const pawnOnLastRow = this.board[this.currentPlayer === "white" ? 7 : 0].find(field => field.piece && field.piece.name === "pawn");
-
-        if (pawnOnLastRow) {
-            const removedPieces = this[pawnOnLastRow.piece.color + "RemovedPieces"];
-
-            const onReturnPieceToField = (p) => {
-                this[pawnOnLastRow.piece.color + "RemovedPieces"] = [...removedPieces.slice(0, removedPieces.indexOf(p)), ...removedPieces.slice(removedPieces.indexOf(p) + 1)];
-            }
-
-            if (removedPieces.length > 0 && removedPieces.some(piece => piece.name !== "pawn")) {
-                this.pawnChangeModal.open(
-                    removedPieces, 
-                    pawnOnLastRow, 
-                    (p) => onReturnPieceToField(p))
-            } else {
-                pawnOnLastRow.piece = null;
-            }
-        }
     }
 
     clearBoard(clearCheckmate) {

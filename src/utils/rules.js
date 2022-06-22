@@ -316,13 +316,13 @@ const calculatePossibleCheckmate = (board, fields, checkmateColor) => {
     }
 }
 
-export const moveTo = (board, oldField, newField) => {
+export const moveTo = (board, oldField, newField, skipPawnMoved) => {
     const [ newFieldRow, newFieldColumn ] = getFieldRowAndColumnIndex(String(newField.field));
     const [ oldFieldRow, oldFieldColumn ] = getFieldRowAndColumnIndex(String(oldField.field));
 
     let removedPiece;
 
-    if (oldField.piece.name === "pawn") oldField.piece.pawnMoved = true;
+    if (oldField.piece.name === "pawn" && !skipPawnMoved) oldField.piece.pawnMoved = true;
 
     if (newField.canAttack) {
         removedPiece = newField.piece;
@@ -352,7 +352,7 @@ const canKingBeDefended = (board, color, enemyCheckmateFields) => {
             const { attacking, defending } = item;
             const newBoard = cloneDeep(board);
 
-            moveTo(newBoard, defending, attacking);
+            moveTo(newBoard, defending, attacking, true);
             const fieldsWithPieces = getAllFieldsWithPieces(newBoard);
 
             const { enemyCheckmateFields } = calculatePossibleCheckmate(newBoard, fieldsWithPieces, color);
@@ -366,7 +366,7 @@ const canKingBeDefended = (board, color, enemyCheckmateFields) => {
             const { checkmateField, defending } = item;
             const newBoard = cloneDeep(board);
 
-            moveTo(newBoard, defending, checkmateField);
+            moveTo(newBoard, defending, checkmateField, true);
             const fieldsWithPieces = getAllFieldsWithPieces(newBoard);
 
             const { enemyCheckmateFields } = calculatePossibleCheckmate(newBoard, fieldsWithPieces, color);
@@ -391,7 +391,7 @@ const canKingEatEnemyPiece = (board, color, king, enemyPieces) => {
             const { attacking, defending } = item;
             const newBoard = cloneDeep(board);
 
-            moveTo(newBoard, defending, attacking);
+            moveTo(newBoard, defending, attacking, true);
             const fieldsWithPieces = getAllFieldsWithPieces(newBoard);
 
             const { enemyCheckmateFields } = calculatePossibleCheckmate(newBoard, fieldsWithPieces, color);
@@ -400,6 +400,31 @@ const canKingEatEnemyPiece = (board, color, king, enemyPieces) => {
     } 
 
     return canEatEnemyPiece.length > 0 && canEatEnemyPiece.every(i => i === false);
+}
+
+const canKingMoveOnEmptyField = (board, color, king, emptyFields) => {
+    const checkmateFieldName = color === "white" ? "checkmateWhite" : "checkmateBlack";
+    const checkmatePathName = color === "white" ? "checkmatePathWhite" : "checkmatePathBlack";
+
+    if (emptyFields.length === 0) return false;
+    if (emptyFields.length > 0 && emptyFields.every(field => field[checkmateFieldName] || field[checkmatePathName])) return false;
+
+    let availableFields = emptyFields.filter(field => !field[checkmateFieldName] && !field[checkmatePathName]);
+
+    if (availableFields.length > 0) {
+
+        availableFields = availableFields.map(field => {
+            const newBoard = cloneDeep(board);
+
+            moveTo(newBoard, king, field, true);
+            const fieldsWithPieces = getAllFieldsWithPieces(newBoard);
+
+            const { enemyCheckmateFields } = calculatePossibleCheckmate(newBoard, fieldsWithPieces, color);
+            return enemyCheckmateFields.length === 0;
+        })
+    } 
+
+    return availableFields.every(i => i === true);
 }
 
 const isCheckmate = (board, currentPlayer, color) => {
@@ -414,22 +439,39 @@ const isCheckmate = (board, currentPlayer, color) => {
 
     const canKingBeDefendedVal = canKingBeDefended(board, color, enemyCheckmateFields);
     const canKingEatEnemyPieceVal = canKingEatEnemyPiece(board, color, king, enemyPieces);
+    const canKingMoveOnEmptyFieldVal = canKingMoveOnEmptyField(board, color, king, emptyFields);
 
     if (enemyCheckmateFields.length === 0) return false;
     if (currentPlayer === color && enemyCheckmateFields.length > 0) return true;
 
-    const checkmateFieldName = color === "white" ? "checkmateWhite" : "checkmateBlack";
-    const checkmatePathName = color === "white" ? "checkmatePathWhite" : "checkmatePathBlack";
-    const emptyFieldsCheckmate = currentPlayer === color && emptyFields.length > 0 ? emptyFields.every(field => field[checkmateFieldName] || field[checkmatePathName]) : false;
-
-    return emptyFieldsCheckmate && canKingBeDefendedVal && canKingEatEnemyPieceVal;
+    return !canKingMoveOnEmptyFieldVal && canKingBeDefendedVal && canKingEatEnemyPieceVal;
 }
 
 export const checkIfCheckmate = (...args) => {
 
     return {
-        checkmateWhite: isCheckmate(...args, "white"),
-        checkmateBlack: isCheckmate(...args, "black"),
+        checkmateWhite: isCheckmate(...args, "white") && "White",
+        checkmateBlack: isCheckmate(...args, "black") && "Black",
     }
 }
 
+// Check if there are any pawns on last row for selected user, if true show modal in which user can select piece to return to board
+export function checkIfPawnOnLastRow(mainStore, board, currentPlayer, pawnChangeModal) {
+    const pawnOnLastRow = board[currentPlayer === "white" ? 7 : 0].find(field => field.piece && field.piece.name === "pawn");
+
+    if (pawnOnLastRow) {
+        const removedPieces = mainStore[pawnOnLastRow.piece.color + "RemovedPieces"];
+        const onReturnPieceToField = (p) => {
+            mainStore[pawnOnLastRow.piece.color + "RemovedPieces"] = [...removedPieces.slice(0, removedPieces.indexOf(p)), ...removedPieces.slice(removedPieces.indexOf(p) + 1)];
+        }
+
+        if (removedPieces.length > 0 && removedPieces.some(piece => piece.name !== "pawn")) {
+            pawnChangeModal.open(
+                removedPieces, 
+                pawnOnLastRow, 
+                (p) => onReturnPieceToField(p))
+        } else {
+            pawnOnLastRow.piece = null;
+        }
+    }
+}
