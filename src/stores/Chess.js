@@ -44,10 +44,12 @@ class Chess {
 
         const removedPiece = moveTo(this.board, this.selectedField, newField);
 
+        // If removed piece is king, that means that current player is winner
         if (removedPiece) {
             if (removedPiece.name === "king") {
-                this.winner = this.currentPlayer.slice(0, 1).toUpperCase() + this.currentPlayer.slice(1);
+                this.winner = this.currentPlayer === "White" ? "White" : "Black";
             }
+            
             this[removedPiece.color + "RemovedPieces"].push(removedPiece);
         }
 

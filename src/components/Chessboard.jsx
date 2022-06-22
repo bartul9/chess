@@ -84,9 +84,9 @@ const Chessboard = observer(({ rootStore }) => {
                                 return <img key={Math.random()} onClick={() => selectRemovedPiece(piece)} src={images[name]} alt="null" style={{ width: "50px"}} /> 
                             })}
                         </div>
-                        <div style={{ border: "19px solid black", borderRadius: 5 }}>
-                            <div style={{ border: "16px solid silver" }}>
-                                <div style={{ border: "13px solid #454545" }}>
+                        <div className="boardBorder3">
+                            <div className="boardBorder2">
+                                <div className="boardBorder1">
                                     <div className="board">
                                         {
                                             board.map(row => <div key={Math.random()} className="row">{row.map(field => <TableField key={field.field} movePiece={movePiece} selected={selectedField && selectedField.field == field.field} onFieldClick={onFieldClick} field={field} />)}</div>)

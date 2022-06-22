@@ -108,3 +108,41 @@
     color: #000000c4;
     font-size: 25px;
 }
+
+.boardBorder1 {
+    border: 13px solid #454545;
+}
+
+.boardBorder2 {
+    border: 16px solid silver;
+}
+
+.boardBorder3 {
+    border: 19px solid black;
+    border-radius: 5px;
+}
+
+@media (max-width: 1183px) {
+    .boardContainer {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 850px) {
+    .board {
+        border: 2px solid black;
+    }
+
+    .boardBorder1 {
+        border: 5px solid #454545;
+    }
+    
+    .boardBorder2 {
+        border: 7px solid silver;
+    }
+    
+    .boardBorder3 {
+        border: 10px solid black;
+        border-radius: 5px;
+    }
+}

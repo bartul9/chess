@@ -27,9 +27,67 @@
     font-weight: 600;
 }
 
-.TableField:hover {
+.pieces {
+    width: 50px;
 }
 
-.pieces {
-    transition: 1s all ease;
+.pathColors {
+    position: absolute; 
+    width: 20px; 
+    height: 20px; 
+    border-radius: 50%;
+}
+
+@media (max-width: 750px) {
+    .TableField {
+        height: 75px;
+        width: 75px;
+    }
+
+    .pieces {
+        width: 45px;
+    }
+}
+
+@media (max-width: 670px) {
+    .TableField {
+        height: 65px;
+        width: 65px;
+    }
+
+    .pieces {
+        width: 40px;
+    }
+}
+
+@media (max-width: 585px) {
+    .TableField {
+        height: 55px;
+        width: 55px;
+    }
+
+    .pieces {
+        width: 35px;
+    }
+
+    .pathColors {
+        width: 15px; 
+        height: 15px; 
+    }
+    
+    .boardNum {
+        font-size: 10px;
+        font-weight: 600;
+    }
+}
+
+@media (max-width: 505px) {
+    .TableField {
+        height: 45px;
+        width: 45px;
+    }
+
+    .pieces {
+        width: 25px;
+    }
 }

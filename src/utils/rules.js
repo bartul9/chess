@@ -437,12 +437,12 @@ const isCheckmate = (board, currentPlayer, color) => {
     const enemyPieces = kingFields.filter(field => field.piece && field.piece.color !== color);
     const king = fieldsWithPieces.find(({ piece }) => piece.name === "king" && piece.color === color);
 
+    if (enemyCheckmateFields.length === 0) return false;
+    if (currentPlayer === color && enemyCheckmateFields.length > 0) return true;
+
     const canKingBeDefendedVal = canKingBeDefended(board, color, enemyCheckmateFields);
     const canKingEatEnemyPieceVal = canKingEatEnemyPiece(board, color, king, enemyPieces);
     const canKingMoveOnEmptyFieldVal = canKingMoveOnEmptyField(board, color, king, emptyFields);
-
-    if (enemyCheckmateFields.length === 0) return false;
-    if (currentPlayer === color && enemyCheckmateFields.length > 0) return true;
 
     return !canKingMoveOnEmptyFieldVal && canKingBeDefendedVal && canKingEatEnemyPieceVal;
 }
