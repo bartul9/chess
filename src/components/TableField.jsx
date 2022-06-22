@@ -5,7 +5,7 @@ import "./TableFields.css";
 import * as images from "../assetes/pieces-icons";
 
 const TableField = observer(({ field, onFieldClick, movePiece, selected }) => {
-    const { piece, isAvailable, canAttack, checkmateWhite, checkmateBlack, mustMoveKing } = field;
+    const { piece, isAvailable, canAttack, checkmateWhite, checkmateBlack, checkmatePathWhite, checkmatePathBlack, mustMoveKing } = field;
 
     const name = piece ? piece.name + (piece.color[0].toUpperCase() + piece.color.slice(1)) : "";
 
@@ -16,7 +16,7 @@ const TableField = observer(({ field, onFieldClick, movePiece, selected }) => {
 
                 {piece && <img className="pieces" src={images[name]} alt="null" style={{ width: "50px" }} />}
 
-                {<div style={{ position: "absolute", width: 20, height: 20, borderRadius: "50%", backgroundColor: mustMoveKing ? "" : (checkmateWhite ? "orange" : (checkmateBlack ? "gold" : (isAvailable ? "#4169E1" : "")))}}></div>}
+                {<div style={{ position: "absolute", width: 20, height: 20, borderRadius: "50%", backgroundColor: mustMoveKing ? "" : ((checkmateWhite || checkmatePathWhite) ? "orange" : ((checkmateBlack || checkmatePathBlack) ? "gold" : (isAvailable ? "#4169E1" : "")))}}></div>}
                 
                 <span style={{ color: String(field.field)[2] == 2 ? "white" : "black" }} className="boardNum">{String(field.field)[0] + mapFieldNumToLetter(String(field.field)[1])}</span>
 

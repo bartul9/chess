@@ -1,7 +1,7 @@
 import { makeAutoObservable } from "mobx";
 
 import { board } from "../utils/board";
-import { calculateAvailablePath, checkIfCheckmate, getAllFieldsWithPieces, moveTo } from "../utils/rules";
+import { calculateAvailablePath, checkIfCheckmate, moveTo } from "../utils/rules";
 import PawnChangeModalStore from "./PawnChangeModalStore";
 
 
@@ -36,7 +36,7 @@ class Chess {
 
         this.selectedField = field;
 
-        calculateAvailablePath(this.board, this.moves, field);
+        calculateAvailablePath(this.board, field);
     }
 
     // Move piece to selected field, if that field contains piece from other player, remove that piece from board
@@ -59,15 +59,17 @@ class Chess {
 
         this.moves++;
 
-        const { checkmateWhite, checkmateBlack } = checkIfCheckmate(this.board, this.moves, this.currentPlayer);
+        const { checkmateWhite, checkmateBlack } = checkIfCheckmate(this.board, this.currentPlayer);
 
         if (checkmateWhite) {
             this.checkmate = "White";
+            this.currentPlayer = "Black"
             return;
         }
 
         if (checkmateBlack) {
             this.checkmate = "Black";
+            this.currentPlayer = "White"
             return;
         }
 
@@ -108,6 +110,8 @@ class Chess {
             if (clearCheckmate) {
                 field["checkmateWhite"] = false;
                 field["checkmateBlack"] = false;
+                field["checkmatePathBlack"] = false;
+                field["checkmatePathWhite"] = false;
                 if (field.mustMoveKing) field.mustMoveKing = false;
             };
         }));

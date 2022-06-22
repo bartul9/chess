@@ -50,19 +50,19 @@ const Chessboard = observer(({ rootStore }) => {
                                 <span className="legendText">- Can attack field</span>
                             </div>
                             <div className="legendDivs">
-                                <span className="legendColors" style={{ backgroundColor: "gold" }}></span>
+                                <span className="legendColors" style={{ backgroundColor: "orange" }}></span>
                                 <span className="legendText">- Checkmate field white</span>
                             </div>
                             <div className="legendDivs">
-                                <span className="legendColors" style={{ backgroundColor: "gold", borderRadius: 0 }}></span>
+                                <span className="legendColors" style={{ backgroundColor: "orange", borderRadius: 0 }}></span>
                                 <span className="legendText">- Checkmate on king white</span>
                             </div>
                             <div className="legendDivs">
-                                <span className="legendColors" style={{ backgroundColor: "orange" }}></span>
+                                <span className="legendColors" style={{ backgroundColor: "gold" }}></span>
                                 <span className="legendText">- Checkmate field black</span>
                             </div>
                             <div className="legendDivs">
-                                <span className="legendColors" style={{ backgroundColor: "orange", borderRadius: 0 }}></span>
+                                <span className="legendColors" style={{ backgroundColor: "gold", borderRadius: 0 }}></span>
                                 <span className="legendText">- Checkmate on king black</span>
                             </div>
                         </div>
