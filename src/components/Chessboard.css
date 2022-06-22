@@ -109,6 +109,10 @@
     font-size: 25px;
 }
 
+.pieces {
+    width: 50px;
+}
+
 .boardBorder1 {
     border: 13px solid #454545;
 }
@@ -144,5 +148,11 @@
     .boardBorder3 {
         border: 10px solid black;
         border-radius: 5px;
+    }
+}
+
+@media (max-width: 585px) {
+    .pieces {
+        width: 40px;
     }
 }

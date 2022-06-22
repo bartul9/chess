@@ -81,7 +81,7 @@ const Chessboard = observer(({ rootStore }) => {
                         <div className="removedPieces">
                             {whiteRemovedPieces.length > 0 && whiteRemovedPieces.map(piece => {     
                                 const name = piece ? piece.name + (piece.color[0].toUpperCase() + piece.color.slice(1)) : "";
-                                return <img key={Math.random()} onClick={() => selectRemovedPiece(piece)} src={images[name]} alt="null" style={{ width: "50px"}} /> 
+                                return <img className="pieces" key={Math.random()} onClick={() => selectRemovedPiece(piece)} src={images[name]} alt="null" /> 
                             })}
                         </div>
                         <div className="boardBorder3">
@@ -98,7 +98,7 @@ const Chessboard = observer(({ rootStore }) => {
                         <div className="removedPieces">
                             {blackRemovedPieces.length > 0 && blackRemovedPieces.map(piece => {     
                                 const name = piece ? piece.name + (piece.color[0].toUpperCase() + piece.color.slice(1)) : "";
-                                return <img key={Math.random()} onClick={() => selectRemovedPiece(piece)} src={images[name]} alt="null" style={{ width: "50px"}} /> 
+                                return <img className="pieces" key={Math.random()} onClick={() => selectRemovedPiece(piece)} src={images[name]} alt="null" /> 
                             })}
                         </div>
                     </div>
