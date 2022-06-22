@@ -10,3 +10,4 @@ export { default as knightBlack } from "./knightBlack.png";
 export { default as knightWhite } from "./knightWhite.png";
 export { default as pawnBlack } from "./pawnBlack.png";
 export { default as pawnWhite } from "./pawnWhite.png";
+export { default as chessIcon } from "./favicon.png";

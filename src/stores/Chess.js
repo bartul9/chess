@@ -1,7 +1,7 @@
 import { makeAutoObservable } from "mobx";
 
 import { board } from "../utils/board";
-import { calculateAvailablePath, calculatePossibleCheckmate, moveTo } from "../utils/rules";
+import { calculateAvailablePath, checkIfCheckmate, getAllFieldsWithPieces, moveTo } from "../utils/rules";
 import PawnChangeModalStore from "./PawnChangeModalStore";
 
 
@@ -48,7 +48,7 @@ class Chess {
 
         if (removedPiece) {
             if (removedPiece.name === "king") {
-                this.winner = this.currentPlayer.toUpperCase();
+                this.winner = this.currentPlayer.slice(0, 1).toUpperCase() + this.currentPlayer.slice(1);
             }
             this[removedPiece.color + "RemovedPieces"].push(removedPiece);
         }
@@ -59,14 +59,14 @@ class Chess {
 
         this.moves++;
 
-        const { white, black } = calculatePossibleCheckmate(this.board, this.moves, this.board.map(row => row.filter(field => field.piece)).flat());
+        const { checkmateWhite, checkmateBlack } = checkIfCheckmate(this.board, this.moves, this.currentPlayer);
 
-        if (white) {
+        if (checkmateWhite) {
             this.checkmate = "White";
             return;
         }
 
-        if (black) {
+        if (checkmateBlack) {
             this.checkmate = "Black";
             return;
         }
@@ -106,8 +106,9 @@ class Chess {
             field.isAvailable = false;
             field.canAttack = false;
             if (clearCheckmate) {
-                field.checkmateColor = null;
-                if (field.mustMoveKing) field.mustMoveKing = null;
+                field["checkmateWhite"] = false;
+                field["checkmateBlack"] = false;
+                if (field.mustMoveKing) field.mustMoveKing = false;
             };
         }));
 

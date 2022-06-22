@@ -1,3 +1,5 @@
+import { cloneDeep } from "lodash";
+
 
 const getFieldRowAndColumn = (field) => {
     return [field[0] - 1, field[1] - 1];
@@ -5,6 +7,7 @@ const getFieldRowAndColumn = (field) => {
 
 // Returns directions and number of steps in which selected piece can move
 const getRules = (board, moves, selectedField, kingsFields) => {
+    if (!selectedField) debugger
     const { piece: { color, name }, field } = selectedField;
 
     const isWhite = color === "white";
@@ -29,7 +32,7 @@ const getRules = (board, moves, selectedField, kingsFields) => {
                         return [n1, n2]
                     }
 
-                    return ((isAttack && nextField && nextField.piece && nextField.piece.color !== color) || (!isAttack && !nextField.piece)) ? [n1, n2] : 0;
+                    return ((isAttack && nextField && nextField.piece && nextField.piece.color !== color) || ((!isAttack && !nextField.piece)) ? [n1, n2] : 0);
                 }
 
                 const path = 
@@ -121,13 +124,14 @@ const getRules = (board, moves, selectedField, kingsFields) => {
     return rules[name].getPath();
 };
 
-export const calculateAvailablePath = (board, moves, field, returnKingFields, enemyPieces) => {
+export const calculateAvailablePath = (board, moves, field, returnKingFields, enemyPieces, canPathBeBlocked) => {
     const [ path, maxSteps ] = getRules(board, moves, field);
     const [ row, column ] = getFieldRowAndColumn(String(field.field));
 
     const calculatedData = {
         kingFields: [],
-        canPieceAttack: false
+        defendingPiece: null,
+        canPathBeBlocked: null
     }
 
     // Loop over path arrays and for every direction in which piece can move, repeat that move until available steps for selected piece are maxed out, or until path hits other piece or border
@@ -143,6 +147,8 @@ export const calculateAvailablePath = (board, moves, field, returnKingFields, en
                 let currentRow = row;
                 let currentColumn = column;
 
+                const checkmateFieldName = field.piece.color === "white" ? "checkmateWhite" : "checkmateBlack";
+
                 for (let step = 1; step <= maxSteps; step++) {
                     const nextRow = currentRow + c[0];
                     const nextColumn = currentColumn + c[1];
@@ -157,9 +163,8 @@ export const calculateAvailablePath = (board, moves, field, returnKingFields, en
                         const { color } = nextField.piece;
 
                         if (color !== field.piece.color && !returnKingFields) {
-
                             if (enemyPieces && enemyPieces.includes(nextField)) {
-                                calculatedData.canPieceAttack = true;
+                                calculatedData.defendingPiece = { attacking: nextField, defending: field };
                             } 
                             
                             if(!enemyPieces) {
@@ -173,6 +178,10 @@ export const calculateAvailablePath = (board, moves, field, returnKingFields, en
                     if (returnKingFields) {
                         calculatedData.kingFields.push(nextField);
                     } 
+
+                    if (canPathBeBlocked && nextField[checkmateFieldName]) {
+                        calculatedData.canPathBeBlocked = { checkmateField: nextField, defending: field };
+                    }
 
                     if(!enemyPieces && !returnKingFields) {
                         nextField.isAvailable = true;
@@ -205,38 +214,120 @@ export const moveTo = (board, oldField, newField) => {
     return removedPiece;
 };
 
-export const calculatePossibleCheckmate = (board, moves, fields) => {
+export const getAllFieldsWithPieces = (board) => board.map(row => row.filter(field => field.piece)).flat();
 
-    const clearCalculatedPath = (path) => {
-        path.forEach(field => field.checkmateColor = null);
+export const checkIfCheckmate = (...args) => {
+    
+    function isCheckmate(board, moves, currentPlayer, color) {
+        
+        const fieldsWithPieces = getAllFieldsWithPieces(board);
+
+        const { kingFields, enemyCheckmateFields } = calculatePossibleCheckmate(board, moves, fieldsWithPieces, color);
+
+        const emptyFields = kingFields.filter(field => !field.piece);
+        const enemyPieces = kingFields.filter(field => field.piece && field.piece.color !== color);
+        const king = fieldsWithPieces.find(({ piece }) => piece.name === "king" && piece.color === color);
+
+        function canKingBeDefended() {
+            const canBeDefended = board.map(row => row.filter(field => field.piece != null && field.piece.color === color && field.piece.name !== "king")).flat().reduce((acc, field) => {
+                const { defendingPiece, canPathBeBlocked } = calculateAvailablePath(board, moves, field, null, enemyCheckmateFields, true);
+                defendingPiece && acc.defenders.push(defendingPiece);
+                canPathBeBlocked && acc.pathBlocking.push(canPathBeBlocked)
+                return acc;
+            }, { defenders: [], pathBlocking: []});
+    
+            if (canBeDefended.defenders.length > 0) {
+                canBeDefended.defenders = canBeDefended.defenders.map(item => {
+                    const { attacking, defending } = item;
+                    const newBoard = cloneDeep(board);
+
+                    moveTo(newBoard, defending, attacking);
+                    const fieldsWithPieces = getAllFieldsWithPieces(newBoard);
+
+                    const { enemyCheckmateFields } = calculatePossibleCheckmate(newBoard, moves, fieldsWithPieces, color);
+                    return enemyCheckmateFields.length > 0;
+                })
+            } 
+
+            if (canBeDefended.pathBlocking.length > 0) {
+                canBeDefended.pathBlocking = canBeDefended.pathBlocking.map(item => {
+                    const { checkmateField, defending } = item;
+                    const newBoard = cloneDeep(board);
+
+                    moveTo(newBoard, defending, checkmateField);
+                    const fieldsWithPieces = getAllFieldsWithPieces(newBoard);
+
+                    const { enemyCheckmateFields } = calculatePossibleCheckmate(newBoard, moves, fieldsWithPieces, color);
+                    return enemyCheckmateFields.length > 0;
+                })
+            } 
+
+            const defendingPossible = canBeDefended.defenders.length > 0 && canBeDefended.defenders.every(i => i === true);
+            const blockingPathPossible = canBeDefended.pathBlocking.length > 0 && canBeDefended.pathBlocking.every(i => i === true);
+
+            return defendingPossible || blockingPathPossible;
+        }
+
+        function canKingEatEnemyPiece() {
+            const { defendingPiece } = calculateAvailablePath(board, moves, king, null, enemyPieces);
+
+            let canEatEnemyPiece = defendingPiece ? [defendingPiece] : [];
+
+            if (canEatEnemyPiece.length > 0) {
+                canEatEnemyPiece = canEatEnemyPiece.map(item => {
+                    const { attacking, defending } = item;
+                    const newBoard = cloneDeep(board);
+
+                    moveTo(newBoard, defending, attacking);
+                    const fieldsWithPieces = getAllFieldsWithPieces(newBoard);
+
+                    const { enemyCheckmateFields } = calculatePossibleCheckmate(newBoard, moves, fieldsWithPieces, color);
+                    return enemyCheckmateFields.length > 0;
+                })
+            } 
+
+            return canEatEnemyPiece.length > 0 && canEatEnemyPiece.every(i => i === true);
+        }
+
+        if (enemyCheckmateFields.length === 0) return false;
+
+        const canKingBeDefendedVal = canKingBeDefended();
+        const canKingEatEnemyPieceVal = canKingEatEnemyPiece();
+
+        if (currentPlayer !== color) return false;
+
+        const checkmateFieldName = color === "white" ? "checkmateWhite" : "checkmateBlack";
+        const emptyFieldsCheckmate = emptyFields.length > 0 ? emptyFields.every(field => field[checkmateFieldName]) : false;
+
+        return emptyFieldsCheckmate && !canKingBeDefendedVal && !canKingEatEnemyPieceVal;
     }
 
-    const checkIfCheckMate = (kingsFields, isCheckmate, color) => {
-        const emptyFields = kingsFields.filter(field => !field.piece);
-        const enemyPieces = kingsFields.filter(field => field.piece && field.piece.color !== color);
-        const friendlyPieces = kingsFields.filter(field => field.piece && field.piece.color === color);
+    return {
+        checkmateWhite: isCheckmate(...args, "white"),
+        checkmateBlack: isCheckmate(...args, "black"),
+    }
+}
 
-        const canFriendAttack = friendlyPieces.reduce((acc, field) => {
-            const { canAttack } = calculateAvailablePath(board, moves, field, null, enemyPieces);
-            canAttack && acc.push(canAttack);
-            return acc;
-        }, []);
+const calculatePossibleCheckmate = (board, moves, fields, checkmateColor) => {
 
-        const emptyFieldsCheckmate = emptyFields.length > 0 ? emptyFields.every(field => field.checkmateColor) : true;
+    const checkmateFieldName = checkmateColor === "white" ? "checkmateWhite" : "checkmateBlack";
 
-        return isCheckmate && emptyFieldsCheckmate && canFriendAttack.length === 0 && enemyPieces.length === 0;
+    const clearCalculatedPath = (path, checkmateFields) => {
+        path.forEach(field => {
+            if (checkmateFields.includes(field)) {
+                return;
+            }
+            field[checkmateFieldName] = false;
+        });
     }
 
-    const whiteKing = fields.find(({ piece: { name, color } }) => name === "king" && color === "white");
-    const blackKing = fields.find(({ piece: { name, color } }) => name === "king" && color === "black");
+    const enemyCheckmateFields = [];
 
-    const { kingFields: whiteKingFields } = calculateAvailablePath(board, 1, whiteKing, true);
-    const { kingFields: blackKingFields } = calculateAvailablePath(board, 1, blackKing, true);
+    const king = fields.find(({ piece: { name, color } }) => name === "king" && color === checkmateColor);
 
-    fields.forEach(field => {
-        const kingsFields = field.piece.color === "white" ? blackKingFields : whiteKingFields;
+    const { kingFields } = calculateAvailablePath(board, 1, king, true);
 
-        const checkmateColor = field.piece.color === "white" ? "black" : "white";
+    fields.filter(({ piece }) => piece.color !== checkmateColor).forEach(field => {
 
         const [ path, maxSteps ] = getRules(board, moves, field);
         const [ row, column ] = getFieldRowAndColumn(String(field.field));
@@ -254,8 +345,6 @@ export const calculatePossibleCheckmate = (board, moves, fields) => {
                     let currentRow = row;
                     let currentColumn = column;
 
-                    let isCheckmate = false;
-
                     const calculatedPath = [];
                     const checkmateFields = [];
 
@@ -265,11 +354,11 @@ export const calculatePossibleCheckmate = (board, moves, fields) => {
 
                         // If next row or column is beyond border return
                         if (nextRow <= -1 || nextRow >= 8) {
-                            !isCheckmate && clearCalculatedPath([...calculatedPath]);
+                            clearCalculatedPath(calculatedPath, checkmateFields);
                             return;
                         } 
                         if (nextColumn <= -1 || nextColumn >= 8) {
-                            !isCheckmate && clearCalculatedPath([...calculatedPath]);
+                            clearCalculatedPath(calculatedPath, checkmateFields);
                             return;
                         } 
 
@@ -278,12 +367,12 @@ export const calculatePossibleCheckmate = (board, moves, fields) => {
                         if (nextField.piece != null) {
                             const { color, name } = nextField.piece;
 
-                            if (color !== field.piece.color && name === "king") {
-                                nextField.checkmateColor = checkmateColor;
-                                calculatedPath.push(nextField);
-                                isCheckmate = true;
+                            if (color === checkmateColor && name === "king") {
+                                nextField[checkmateFieldName] = true;
                                 nextField.mustMoveKing = true;
 
+                                enemyCheckmateFields.push(field);
+                                
                                 if (step < maxSteps) {
                                     const nextNextRow = nextRow + c[0];
                                     const nextNextColumn = nextColumn + c[1];
@@ -298,32 +387,29 @@ export const calculatePossibleCheckmate = (board, moves, fields) => {
 
                                     const nextNextField = board[nextNextRow][nextNextColumn];
 
-                                    if (nextNextField && !nextNextField.piece && kingsFields.includes(nextNextField)) {
-                                        nextNextField.checkmateColor = checkmateColor;
+                                    if (nextNextField && !nextNextField.piece && kingFields.includes(nextNextField)) {
+                                        nextNextField[checkmateFieldName] = true;
                                         checkmateFields.push(nextNextField);
-                                        return;
                                     }
                                 }
+
+                                return;
                             } else {
-                                if (!isCheckmate) clearCalculatedPath([...calculatedPath]);
+                                clearCalculatedPath(calculatedPath, checkmateFields);
                                 return;
                             }
                         }
 
-                        if (kingsFields.includes(nextField)) {
-                            nextField.checkmateColor = checkmateColor;
+                        if (!nextField[checkmateFieldName]) calculatedPath.push(nextField);
+
+                        nextField[checkmateFieldName] = true;
+
+                        if (kingFields.includes(nextField)) {
                             checkmateFields.push(nextField);
                         }
 
-                        if (step == maxSteps && !isCheckmate) {
-                            return clearCalculatedPath([...calculatedPath]);
-                        }
+                        if (step === maxSteps) clearCalculatedPath(calculatedPath, checkmateFields);
 
-                        if (!nextField.checkmateColor) {
-                            nextField.checkmateColor = checkmateColor;
-                            calculatedPath.push(nextField);
-                        }
-                        
                         currentRow = nextRow;
                         currentColumn = nextColumn;
                     }
@@ -334,7 +420,7 @@ export const calculatePossibleCheckmate = (board, moves, fields) => {
 
 
     return {
-        white: checkIfCheckMate(whiteKingFields, whiteKing.mustMoveKing, "white"),
-        black: checkIfCheckMate(blackKingFields, blackKing.mustMoveKing, "black"),
+        kingFields, 
+        enemyCheckmateFields, 
     }
 }

@@ -43,6 +43,7 @@
     flex-direction: row;
     align-items: baseline;
     justify-content: baseline;
+    color: #000000c4;
 }
 
 .removedPieces {
@@ -56,19 +57,23 @@
 .legend {
     height: 300px;
     width: fit-content;
+    margin-bottom: 15px;
+    margin-top: 5px;
+    color: #000000c4;
 }
 
 .legendDivs {
     margin: 5px;
     margin-left: 0px;
     height: 30px;
-    width: 200px;
+    width: 300px;
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
     padding: 3px;
     padding-left: 0px;
+    margin-left: 15px;
 }
 
 .legendColors {
@@ -76,7 +81,7 @@
     height: 25px;
     border-radius: 50%;
     background-color: red;
-    margin-right: 15px;
+    margin-right: 7px;
 }
 
 .resetBtn {
@@ -87,8 +92,19 @@
     border: none;
     color: white;
     font-size: 16px;
+    margin-top: 5px;
 }
 
 .currentPlayerText {
     font-size: 19px;
+}
+
+.title {
+    width: 200px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    color: #000000c4;
+    font-size: 25px;
 }
