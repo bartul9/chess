@@ -71,13 +71,14 @@
     }
 
     .pathColors {
-        width: 15px; 
-        height: 15px; 
+        width: 11px; 
+        height: 11px; 
     }
     
     .boardNum {
         font-size: 10px;
         font-weight: 600;
+        right: 1px;
     }
 }
 

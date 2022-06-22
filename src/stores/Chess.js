@@ -1,6 +1,6 @@
 import { makeAutoObservable } from "mobx";
 
-import { board } from "../utils/board";
+import { board, randomizeBoard } from "../utils/board";
 import { calculateAvailablePath, checkIfCheckmate, moveTo, checkIfPawnOnLastRow } from "../utils/rules";
 import PawnChangeModalStore from "./PawnChangeModalStore";
 
@@ -49,7 +49,7 @@ class Chess {
             if (removedPiece.name === "king") {
                 this.winner = this.currentPlayer === "White" ? "White" : "Black";
             }
-            
+
             this[removedPiece.color + "RemovedPieces"].push(removedPiece);
         }
 
@@ -98,6 +98,20 @@ class Chess {
         this.blackRemovedPieces = [];
         this.winner = null;
         this.checkmate = null;
+    }
+
+    randomizeBoardAndCheckForCheckmate = () => {
+        this.resetGame();
+
+        this.board = randomizeBoard();
+
+        this.currentPlayer = Math.random() > 0.5 ? "white" : "black";
+
+        const { checkmateWhite, checkmateBlack } = checkIfCheckmate(this.board, this.currentPlayer);
+
+        if (checkmateWhite || checkmateBlack) {
+            this.checkmate = checkmateWhite || checkmateBlack;
+        }
     }
 
 }

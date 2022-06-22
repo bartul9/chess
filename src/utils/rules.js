@@ -1,11 +1,11 @@
 import { cloneDeep } from "lodash";
 
 
-const getFieldRowAndColumnIndex = (field) => {
+export const getFieldRowAndColumnIndex = (field) => {
     return [field[0] - 1, field[1] - 1];
 }
 
-const getAllFieldsWithPieces = (board) => board.map(row => row.filter(field => field.piece)).flat();
+export const getAllFieldsWithPieces = (board) => board.map(row => row.filter(field => field.piece)).flat();
 
 // Returns directions and number of steps in which selected piece can move
 const getRules = (board, selectedField, kingsFields) => {
@@ -20,19 +20,22 @@ const getRules = (board, selectedField, kingsFields) => {
         pawn: {
             getPath: () => {
 
-                let maxSteps  = !selectedField.piece.pawnMoved ? 2 : 1;
+                let maxSteps  = !(selectedField.piece.pawnMoved && !selectedField.piece.randomized) ? 2 : 1;
 
                 const canAttackCheck = (n1, n2, isAttack = true) => {
                     const nextRow = row + n1;
                     const nextColumn = column + n2;
 
                     // If next row or column is beyond border return
-                    if (nextRow <= -1 || nextRow >= 8) return; 
-                    if (nextColumn <= -1 || nextColumn >= 8) return;
+                    if (nextRow <= -1 || nextRow >= 8) return 0; 
+                    if (nextColumn <= -1 || nextColumn >= 8) return 0;
 
                     const nextField = board[nextRow][nextColumn];
 
-                    if (!selectedField.piece.pawnMoved && !isAttack && !nextField.piece) {
+                    if (!selectedField.piece.pawnMoved && !selectedField.piece.randomized && !isAttack && !nextField.piece) {
+                        if (nextRow + n1 <= -1 || nextRow + n1 >= 8) return 0; 
+                        if (nextColumn + n2 <= -1 || nextColumn + n2 >= 8) return 0;
+
                         const nextNextField = board[nextRow + n1][nextColumn + n2];
                         maxSteps = !nextNextField.piece ? 2 : 1;
                         return [n1, n2];
@@ -135,8 +138,8 @@ export const calculateAvailablePath = (board, field, returnKingFields, enemyPiec
 
     const calculatedData = {
         kingFields: [],
-        defendingPiece: null,
-        canPathBeBlocked: null
+        defendingPiece: [],
+        canPathBeBlocked: []
     }
 
     // Loop over path arrays and for every direction in which piece can move, repeat that move until available steps for selected piece are maxed out, or until path hits other piece or border
@@ -169,7 +172,7 @@ export const calculateAvailablePath = (board, field, returnKingFields, enemyPiec
 
                         if (color !== field.piece.color && !returnKingFields) {
                             if (enemyPieces && enemyPieces.includes(nextField)) {
-                                calculatedData.defendingPiece = { attacking: nextField, defending: field };
+                                calculatedData.defendingPiece.push({ attacking: nextField, defending: field });
                             } 
                             
                             if(!enemyPieces) {
@@ -185,7 +188,7 @@ export const calculateAvailablePath = (board, field, returnKingFields, enemyPiec
                     } 
 
                     if (canPathBeBlocked && nextField[checkmateFieldName]) {
-                        calculatedData.canPathBeBlocked = { checkmateField: nextField, defending: field };
+                        calculatedData.canPathBeBlocked.push({ checkmateField: nextField, defending: field });
                     }
 
                     if(!enemyPieces && !returnKingFields) {
@@ -340,8 +343,8 @@ const canKingBeDefended = (board, color, enemyCheckmateFields) => {
 
         const { defendingPiece, canPathBeBlocked } = calculateAvailablePath(board, field, null, enemyCheckmateFields, true);
 
-        defendingPiece && acc.defenders.push(defendingPiece);
-        canPathBeBlocked && acc.pathBlocking.push(canPathBeBlocked)
+        defendingPiece && acc.defenders.push(...defendingPiece);
+        canPathBeBlocked && acc.pathBlocking.push(...canPathBeBlocked)
 
         return acc;
     }, { defenders: [], pathBlocking: []});
@@ -383,7 +386,7 @@ const canKingBeDefended = (board, color, enemyCheckmateFields) => {
 const canKingEatEnemyPiece = (board, color, king, enemyPieces) => {
     const { defendingPiece } = calculateAvailablePath(board, king, null, enemyPieces);
 
-    let canEatEnemyPiece = defendingPiece ? [defendingPiece] : [];
+    let canEatEnemyPiece = defendingPiece;
 
     if (canEatEnemyPiece.length > 0) {
 
@@ -444,7 +447,7 @@ const isCheckmate = (board, currentPlayer, color) => {
     const canKingEatEnemyPieceVal = canKingEatEnemyPiece(board, color, king, enemyPieces);
     const canKingMoveOnEmptyFieldVal = canKingMoveOnEmptyField(board, color, king, emptyFields);
 
-    return !canKingMoveOnEmptyFieldVal && canKingBeDefendedVal && canKingEatEnemyPieceVal;
+    return !canKingMoveOnEmptyFieldVal && !canKingBeDefendedVal && !canKingEatEnemyPieceVal;
 }
 
 export const checkIfCheckmate = (...args) => {

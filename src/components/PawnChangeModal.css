@@ -11,11 +11,28 @@
     justify-content: center;
 }
 
-.removedPiece{
-    /* transition: 200ms; */
-}
-
 .removedPiece:hover {
     border-bottom: 3px solid lightgreen;
     cursor: pointer;
+}
+
+.pieces {
+    width: 50px;
+    padding: 1px;
+}
+
+
+@media (max-width: 785px) {
+    .pieces {
+        width: 35px;
+    }
+
+}
+
+
+@media (max-width: 585px) {
+    .pieces {
+        width: 25px;
+    }
+
 }

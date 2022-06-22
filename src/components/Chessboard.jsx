@@ -14,6 +14,7 @@ const Chessboard = observer(({ rootStore }) => {
         moves,
         onFieldClick,
         resetGame,
+        randomizeBoardAndCheckForCheckmate,
         movePiece,
         selectedField,
         currentPlayer,
@@ -76,6 +77,7 @@ const Chessboard = observer(({ rootStore }) => {
                         </div>
 
                         <button className="resetBtn" onClick={resetGame}>Reset</button>
+                        <button className="resetBtn" onClick={randomizeBoardAndCheckForCheckmate}>Randomize board</button>
                     </div>
                     <div>
                         <div className="removedPieces">
