@@ -112,6 +112,8 @@ class Chess {
         if (checkmateWhite || checkmateBlack) {
             this.checkmate = checkmateWhite || checkmateBlack;
         }
+
+        this.onSwitchCurrentPlayer();
     }
 
 }

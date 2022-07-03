@@ -11,10 +11,10 @@ export const board = [
     [
         { field: 111, piece: { name: "rook", color: "white" } }, 
         { field: 122, piece: { name: "knight", color: "white" } }, 
-        { field: 131, piece: { name: "bishop", color: "white", fieldColor: "white" } }, 
+        { field: 131, piece: { name: "bishop", color: "white" } }, 
         { field: 142, piece: { name: "queen", color: "white" } }, 
         { field: 151, piece: { name: "king", color: "white" } }, 
-        { field: 162, piece: { name: "bishop", color: "white", fieldColor: "black" } }, 
+        { field: 162, piece: { name: "bishop", color: "white" } }, 
         { field: 171, piece: { name: "knight", color: "white" } }, 
         { field: 182, piece: { name: "rook", color: "white" } }
     ],
@@ -81,10 +81,10 @@ export const board = [
     [
         { field: 812, piece: { name: "rook", color: "black" } }, 
         { field: 821, piece: { name: "knight", color: "black" } }, 
-        { field: 832, piece: { name: "bishop", color: "black", fieldColor: "black" } }, 
+        { field: 832, piece: { name: "bishop", color: "black" } }, 
         { field: 841, piece: { name: "queen", color: "black" } }, 
         { field: 852, piece: { name: "king", color: "black" } }, 
-        { field: 861, piece: { name: "bishop", color: "black", fieldColor: "white" } }, 
+        { field: 861, piece: { name: "bishop", color: "black" } }, 
         { field: 872, piece: { name: "knight", color: "black" } }, 
         { field: 881, piece: { name: "rook", color: "black" } }
     ]
@@ -94,12 +94,10 @@ export const board = [
 export const randomizeBoard = () => {
     const newBoard = cloneDeep(board);
 
-    // Get all pieces but randomly set lower number of pawns so board is not overcrowded
-    const pieces = getAllFieldsWithPieces(newBoard).map(field => field.piece).reduce((acc, piece, ix) => {
-        piece.name === "pawn" && ix % 2 !== 0 ? acc.push({ ...piece, randomized: true }) : piece.name !== "pawn" && acc.push(piece);
-        return acc;
-    }, []);
+    // Get all pieces but remove pawns
+    const pieces = getAllFieldsWithPieces(newBoard).map(field => field.piece).filter(piece => piece.name !== "pawn");
 
+    // Set all fields to be empty
     newBoard.forEach(row => row.forEach(field => field.piece = null));
 
     const fields = newBoard.map(row => row.map(field => field.field)).flat();

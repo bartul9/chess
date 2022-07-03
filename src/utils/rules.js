@@ -20,7 +20,7 @@ const getRules = (board, selectedField, kingsFields) => {
         pawn: {
             getPath: () => {
 
-                let maxSteps  = !(selectedField.piece.pawnMoved && !selectedField.piece.randomized) ? 2 : 1;
+                let maxSteps  = !(selectedField.piece.pawnMoved) ? 2 : 1;
 
                 const canAttackCheck = (n1, n2, isAttack = true) => {
                     const nextRow = row + n1;
@@ -32,7 +32,7 @@ const getRules = (board, selectedField, kingsFields) => {
 
                     const nextField = board[nextRow][nextColumn];
 
-                    if (!selectedField.piece.pawnMoved && !selectedField.piece.randomized && !isAttack && !nextField.piece) {
+                    if (!selectedField.piece.pawnMoved && !isAttack && !nextField.piece) {
                         if (nextRow + n1 <= -1 || nextRow + n1 >= 8) return 0; 
                         if (nextColumn + n2 <= -1 || nextColumn + n2 >= 8) return 0;
 
@@ -380,7 +380,7 @@ const canKingBeDefended = (board, color, enemyCheckmateFields) => {
     const defendingPossible = canBeDefended.defenders.length > 0 && canBeDefended.defenders.every(i => i === false);
     const blockingPathPossible = canBeDefended.pathBlocking.length > 0 && canBeDefended.pathBlocking.every(i => i === false);
 
-    return defendingPossible || blockingPathPossible;
+    return !defendingPossible && !blockingPathPossible;
 }
 
 const canKingEatEnemyPiece = (board, color, king, enemyPieces) => {
@@ -409,8 +409,8 @@ const canKingMoveOnEmptyField = (board, color, king, emptyFields) => {
     const checkmateFieldName = color === "white" ? "checkmateWhite" : "checkmateBlack";
     const checkmatePathName = color === "white" ? "checkmatePathWhite" : "checkmatePathBlack";
 
-    if (emptyFields.length === 0) return false;
-    if (emptyFields.length > 0 && emptyFields.every(field => field[checkmateFieldName] || field[checkmatePathName])) return false;
+    if (emptyFields.length === 0) return true;
+    if (emptyFields.length > 0 && emptyFields.every(field => field[checkmateFieldName] || field[checkmatePathName])) return true;
 
     let availableFields = emptyFields.filter(field => !field[checkmateFieldName] && !field[checkmatePathName]);
 
@@ -423,7 +423,7 @@ const canKingMoveOnEmptyField = (board, color, king, emptyFields) => {
             const fieldsWithPieces = getAllFieldsWithPieces(newBoard);
 
             const { enemyCheckmateFields } = calculatePossibleCheckmate(newBoard, fieldsWithPieces, color);
-            return enemyCheckmateFields.length === 0;
+            return enemyCheckmateFields.length > 0;
         })
     } 
 
@@ -447,7 +447,7 @@ const isCheckmate = (board, currentPlayer, color) => {
     const canKingEatEnemyPieceVal = canKingEatEnemyPiece(board, color, king, enemyPieces);
     const canKingMoveOnEmptyFieldVal = canKingMoveOnEmptyField(board, color, king, emptyFields);
 
-    return !canKingMoveOnEmptyFieldVal && !canKingBeDefendedVal && !canKingEatEnemyPieceVal;
+    return canKingMoveOnEmptyFieldVal && canKingBeDefendedVal && canKingEatEnemyPieceVal;
 }
 
 export const checkIfCheckmate = (...args) => {
