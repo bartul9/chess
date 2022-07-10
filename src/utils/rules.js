@@ -1,16 +1,13 @@
 import { cloneDeep } from "lodash";
 
 
-export const getFieldRowAndColumnIndex = (field) => {
-    return [field[0] - 1, field[1] - 1];
-}
+export const getFieldRowAndColumnIndex = (field) => [field[0] - 1, field[1] - 1];
 
 export const getAllFieldsWithPieces = (board) => board.map(row => row.filter(field => field.piece)).flat();
 
 // Returns directions and number of steps in which selected piece can move
 const getRules = (board, selectedField, kingsFields) => {
-    if (!selectedField) debugger
-    const { piece: { color, name }, field } = selectedField;
+    const { piece: { color, name, stepsTaken }, field } = selectedField;
 
     const isWhite = color === "white";
 
@@ -20,7 +17,7 @@ const getRules = (board, selectedField, kingsFields) => {
         pawn: {
             getPath: () => {
 
-                let maxSteps  = !(selectedField.piece.pawnMoved) ? 2 : 1;
+                let maxSteps  = !stepsTaken ? 2 : 1;
 
                 const canAttackCheck = (n1, n2, isAttack = true) => {
                     const nextRow = row + n1;
@@ -32,7 +29,7 @@ const getRules = (board, selectedField, kingsFields) => {
 
                     const nextField = board[nextRow][nextColumn];
 
-                    if (!selectedField.piece.pawnMoved && !isAttack && !nextField.piece) {
+                    if (!stepsTaken && !isAttack && !nextField.piece) {
                         if (nextRow + n1 <= -1 || nextRow + n1 >= 8) return 0; 
                         if (nextColumn + n2 <= -1 || nextColumn + n2 >= 8) return 0;
 
@@ -45,7 +42,7 @@ const getRules = (board, selectedField, kingsFields) => {
                         return [n1, n2]
                     }
 
-                    return ((isAttack && nextField && nextField.piece && nextField.piece.color !== color) || ((!isAttack && !nextField.piece)) ? [n1, n2] : 0);
+                    return ((isAttack && nextField && nextField.piece && nextField.piece.color !== color) || (!isAttack && !nextField.piece)) ? [n1, n2] : 0;
                 }
 
                 return [isWhite ? [[ 0, 0, 0 ], [ 0, field, 0 ], [canAttackCheck(1, -1), canAttackCheck(1, 0, false), canAttackCheck(1, 1)]] : [
@@ -319,16 +316,18 @@ const calculatePossibleCheckmate = (board, fields, checkmateColor) => {
     }
 }
 
-export const moveTo = (board, oldField, newField, skipPawnMoved) => {
+export const moveTo = (board, oldField, newField, skipStepsAdd = true) => {
     const [ newFieldRow, newFieldColumn ] = getFieldRowAndColumnIndex(String(newField.field));
     const [ oldFieldRow, oldFieldColumn ] = getFieldRowAndColumnIndex(String(oldField.field));
 
     let removedPiece;
 
-    if (oldField.piece.name === "pawn" && !skipPawnMoved) oldField.piece.pawnMoved = true;
-
     if (newField.canAttack) {
         removedPiece = newField.piece;
+    }
+
+    if (!skipStepsAdd) {
+        oldField.piece.stepsTaken += 1
     }
 
     board[newFieldRow][newFieldColumn].piece = oldField.piece;
@@ -336,6 +335,27 @@ export const moveTo = (board, oldField, newField, skipPawnMoved) => {
 
     return removedPiece;
 };
+
+// Check if there are any pawns on last row for selected user, if true show modal in which user can select piece to return to board
+export function checkIfPawnOnLastRow(mainStore, board, currentPlayer, pawnChangeModal) {
+    const pawnOnLastRow = board[currentPlayer === "white" ? 7 : 0].find(field => field.piece && field.piece.name === "pawn");
+
+    if (pawnOnLastRow) {
+        const removedPieces = mainStore[pawnOnLastRow.piece.color + "RemovedPieces"];
+        const onReturnPieceToField = (p) => {
+            mainStore[pawnOnLastRow.piece.color + "RemovedPieces"] = [...removedPieces.slice(0, removedPieces.indexOf(p)), ...removedPieces.slice(removedPieces.indexOf(p) + 1)];
+        }
+
+        if (removedPieces.length > 0 && removedPieces.some(piece => piece.name !== "pawn")) {
+            pawnChangeModal.open(
+                removedPieces, 
+                pawnOnLastRow, 
+                (p) => onReturnPieceToField(p))
+        } else {
+            pawnOnLastRow.piece = null;
+        }
+    }
+}
 
 const canKingBeDefended = (board, color, enemyCheckmateFields) => {
 
@@ -355,7 +375,7 @@ const canKingBeDefended = (board, color, enemyCheckmateFields) => {
             const { attacking, defending } = item;
             const newBoard = cloneDeep(board);
 
-            moveTo(newBoard, defending, attacking, true);
+            moveTo(newBoard, defending, attacking);
             const fieldsWithPieces = getAllFieldsWithPieces(newBoard);
 
             const { enemyCheckmateFields } = calculatePossibleCheckmate(newBoard, fieldsWithPieces, color);
@@ -369,7 +389,7 @@ const canKingBeDefended = (board, color, enemyCheckmateFields) => {
             const { checkmateField, defending } = item;
             const newBoard = cloneDeep(board);
 
-            moveTo(newBoard, defending, checkmateField, true);
+            moveTo(newBoard, defending, checkmateField);
             const fieldsWithPieces = getAllFieldsWithPieces(newBoard);
 
             const { enemyCheckmateFields } = calculatePossibleCheckmate(newBoard, fieldsWithPieces, color);
@@ -394,7 +414,7 @@ const canKingEatEnemyPiece = (board, color, king, enemyPieces) => {
             const { attacking, defending } = item;
             const newBoard = cloneDeep(board);
 
-            moveTo(newBoard, defending, attacking, true);
+            moveTo(newBoard, defending, attacking);
             const fieldsWithPieces = getAllFieldsWithPieces(newBoard);
 
             const { enemyCheckmateFields } = calculatePossibleCheckmate(newBoard, fieldsWithPieces, color);
@@ -419,7 +439,7 @@ const canKingMoveOnEmptyField = (board, color, king, emptyFields) => {
         availableFields = availableFields.map(field => {
             const newBoard = cloneDeep(board);
 
-            moveTo(newBoard, king, field, true);
+            moveTo(newBoard, king, field);
             const fieldsWithPieces = getAllFieldsWithPieces(newBoard);
 
             const { enemyCheckmateFields } = calculatePossibleCheckmate(newBoard, fieldsWithPieces, color);
@@ -443,11 +463,11 @@ const isCheckmate = (board, currentPlayer, color) => {
     if (enemyCheckmateFields.length === 0) return false;
     if (currentPlayer === color && enemyCheckmateFields.length > 0) return true;
 
-    const canKingBeDefendedVal = canKingBeDefended(board, color, enemyCheckmateFields);
-    const canKingEatEnemyPieceVal = canKingEatEnemyPiece(board, color, king, enemyPieces);
-    const canKingMoveOnEmptyFieldVal = canKingMoveOnEmptyField(board, color, king, emptyFields);
+    const kingCantBeDefended = canKingBeDefended(board, color, enemyCheckmateFields);
+    const kingCantEatEnemyPiece = canKingEatEnemyPiece(board, color, king, enemyPieces);
+    const kingCantMoveOnEmptyField = canKingMoveOnEmptyField(board, color, king, emptyFields);
 
-    return canKingMoveOnEmptyFieldVal && canKingBeDefendedVal && canKingEatEnemyPieceVal;
+    return kingCantMoveOnEmptyField && kingCantBeDefended && kingCantEatEnemyPiece;
 }
 
 export const checkIfCheckmate = (...args) => {
@@ -455,26 +475,5 @@ export const checkIfCheckmate = (...args) => {
     return {
         checkmateWhite: isCheckmate(...args, "white") && "White",
         checkmateBlack: isCheckmate(...args, "black") && "Black",
-    }
-}
-
-// Check if there are any pawns on last row for selected user, if true show modal in which user can select piece to return to board
-export function checkIfPawnOnLastRow(mainStore, board, currentPlayer, pawnChangeModal) {
-    const pawnOnLastRow = board[currentPlayer === "white" ? 7 : 0].find(field => field.piece && field.piece.name === "pawn");
-
-    if (pawnOnLastRow) {
-        const removedPieces = mainStore[pawnOnLastRow.piece.color + "RemovedPieces"];
-        const onReturnPieceToField = (p) => {
-            mainStore[pawnOnLastRow.piece.color + "RemovedPieces"] = [...removedPieces.slice(0, removedPieces.indexOf(p)), ...removedPieces.slice(removedPieces.indexOf(p) + 1)];
-        }
-
-        if (removedPieces.length > 0 && removedPieces.some(piece => piece.name !== "pawn")) {
-            pawnChangeModal.open(
-                removedPieces, 
-                pawnOnLastRow, 
-                (p) => onReturnPieceToField(p))
-        } else {
-            pawnOnLastRow.piece = null;
-        }
     }
 }

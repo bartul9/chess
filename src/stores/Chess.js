@@ -42,7 +42,7 @@ class Chess {
         const { canAttack, isAvailable } = newField;
         if (!canAttack && !isAvailable) return;
 
-        const removedPiece = moveTo(this.board, this.selectedField, newField);
+        const removedPiece = moveTo(this.board, this.selectedField, newField, false);
 
         // If removed piece is king, that means that current player is winner
         if (removedPiece) {
@@ -78,11 +78,11 @@ class Chess {
             field.isAvailable = false;
             field.canAttack = false;
             if (clearCheckmate) {
-                field["checkmateWhite"] = false;
-                field["checkmateBlack"] = false;
-                field["checkmatePathBlack"] = false;
-                field["checkmatePathWhite"] = false;
-                if (field.mustMoveKing) field.mustMoveKing = false;
+                field.checkmateWhite = false;
+                field.checkmateBlack = false;
+                field.checkmatePathBlack = false;
+                field.checkmatePathWhite = false;
+                field.mustMoveKing = false;
             };
         }));
 

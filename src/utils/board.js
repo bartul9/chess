@@ -9,24 +9,24 @@ import { getAllFieldsWithPieces, getFieldRowAndColumnIndex } from "./rules";
 // fields are marked with 3 numbers, first one is row, second one is column, and third one is color of the field, etc. 1 = white, 2 = black
 export const board = [
     [
-        { field: 111, piece: { name: "rook", color: "white" } }, 
-        { field: 122, piece: { name: "knight", color: "white" } }, 
-        { field: 131, piece: { name: "bishop", color: "white" } }, 
-        { field: 142, piece: { name: "queen", color: "white" } }, 
-        { field: 151, piece: { name: "king", color: "white" } }, 
-        { field: 162, piece: { name: "bishop", color: "white" } }, 
-        { field: 171, piece: { name: "knight", color: "white" } }, 
-        { field: 182, piece: { name: "rook", color: "white" } }
+        { field: 111, piece: { name: "rook", color: "white", stepsTaken: 0 } }, 
+        { field: 122, piece: { name: "knight", color: "white", stepsTaken: 0 } }, 
+        { field: 131, piece: { name: "bishop", color: "white", stepsTaken: 0 } }, 
+        { field: 142, piece: { name: "queen", color: "white", stepsTaken: 0 } }, 
+        { field: 151, piece: { name: "king", color: "white", stepsTaken: 0 } }, 
+        { field: 162, piece: { name: "bishop", color: "white", stepsTaken: 0 } }, 
+        { field: 171, piece: { name: "knight", color: "white", stepsTaken: 0 } }, 
+        { field: 182, piece: { name: "rook", color: "white", stepsTaken: 0 } }
     ],
     [
-        { field: 212, piece: { name: "pawn", color: "white" } }, 
-        { field: 221, piece: { name: "pawn", color: "white" } }, 
-        { field: 232, piece: { name: "pawn", color: "white" } }, 
-        { field: 241, piece: { name: "pawn", color: "white" } }, 
-        { field: 252, piece: { name: "pawn", color: "white" } }, 
-        { field: 261, piece: { name: "pawn", color: "white" } }, 
-        { field: 272, piece: { name: "pawn", color: "white" } }, 
-        { field: 281, piece: { name: "pawn", color: "white" } }
+        { field: 212, piece: { name: "pawn", color: "white", stepsTaken: 0 } }, 
+        { field: 221, piece: { name: "pawn", color: "white", stepsTaken: 0 } }, 
+        { field: 232, piece: { name: "pawn", color: "white", stepsTaken: 0 } }, 
+        { field: 241, piece: { name: "pawn", color: "white", stepsTaken: 0 } }, 
+        { field: 252, piece: { name: "pawn", color: "white", stepsTaken: 0 } }, 
+        { field: 261, piece: { name: "pawn", color: "white", stepsTaken: 0 } }, 
+        { field: 272, piece: { name: "pawn", color: "white", stepsTaken: 0 } }, 
+        { field: 281, piece: { name: "pawn", color: "white", stepsTaken: 0 } }
     ],
     [
         { field: 311, piece: null }, 
@@ -69,24 +69,24 @@ export const board = [
         { field: 681, piece: null }
     ],
     [
-        { field: 711, piece: { name: "pawn", color: "black" } }, 
-        { field: 722, piece: { name: "pawn", color: "black" } },
-        { field: 731, piece: { name: "pawn", color: "black" } }, 
-        { field: 742, piece: { name: "pawn", color: "black" } }, 
-        { field: 751, piece: { name: "pawn", color: "black" } }, 
-        { field: 762, piece: { name: "pawn", color: "black" } }, 
-        { field: 771, piece: { name: "pawn", color: "black" } }, 
-        { field: 782, piece: { name: "pawn", color: "black" } }
+        { field: 711, piece: { name: "pawn", color: "black", stepsTaken: 0 } }, 
+        { field: 722, piece: { name: "pawn", color: "black", stepsTaken: 0 } },
+        { field: 731, piece: { name: "pawn", color: "black", stepsTaken: 0 } }, 
+        { field: 742, piece: { name: "pawn", color: "black", stepsTaken: 0 } }, 
+        { field: 751, piece: { name: "pawn", color: "black", stepsTaken: 0 } }, 
+        { field: 762, piece: { name: "pawn", color: "black", stepsTaken: 0 } }, 
+        { field: 771, piece: { name: "pawn", color: "black", stepsTaken: 0 } }, 
+        { field: 782, piece: { name: "pawn", color: "black", stepsTaken: 0 } }
     ],
     [
-        { field: 812, piece: { name: "rook", color: "black" } }, 
-        { field: 821, piece: { name: "knight", color: "black" } }, 
-        { field: 832, piece: { name: "bishop", color: "black" } }, 
-        { field: 841, piece: { name: "queen", color: "black" } }, 
-        { field: 852, piece: { name: "king", color: "black" } }, 
-        { field: 861, piece: { name: "bishop", color: "black" } }, 
-        { field: 872, piece: { name: "knight", color: "black" } }, 
-        { field: 881, piece: { name: "rook", color: "black" } }
+        { field: 812, piece: { name: "rook", color: "black", stepsTaken: 0 } }, 
+        { field: 821, piece: { name: "knight", color: "black", stepsTaken: 0 } }, 
+        { field: 832, piece: { name: "bishop", color: "black", stepsTaken: 0 } }, 
+        { field: 841, piece: { name: "queen", color: "black", stepsTaken: 0 } }, 
+        { field: 852, piece: { name: "king", color: "black", stepsTaken: 0 } }, 
+        { field: 861, piece: { name: "bishop", color: "black", stepsTaken: 0 } }, 
+        { field: 872, piece: { name: "knight", color: "black", stepsTaken: 0 } }, 
+        { field: 881, piece: { name: "rook", color: "black", stepsTaken: 0 } }
     ]
 ];     
 
