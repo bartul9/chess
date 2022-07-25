@@ -7,7 +7,7 @@ export const getAllFieldsWithPieces = (board) => board.map(row => row.filter(fie
 
 // Returns directions and number of steps in which selected piece can move
 const getRules = (board, selectedField, kingsFields) => {
-    const { piece: { color, name, stepsTaken }, field } = selectedField;
+    const { piece: { color, name, steps }, field } = selectedField;
 
     const isWhite = color === "white";
 
@@ -15,10 +15,11 @@ const getRules = (board, selectedField, kingsFields) => {
 
     const rules = {
         pawn: {
-            getPath: () => {
+            get path() {
 
-                let maxSteps  = !stepsTaken ? 2 : 1;
+                let maxSteps  = !steps ? 2 : 1;
 
+                // Pawn has additional calculations because it can move on additional fields only if enemy piece exists on those fields
                 const canAttackCheck = (n1, n2, isAttack = true) => {
                     const nextRow = row + n1;
                     const nextColumn = column + n2;
@@ -29,20 +30,20 @@ const getRules = (board, selectedField, kingsFields) => {
 
                     const nextField = board[nextRow][nextColumn];
 
-                    if (!stepsTaken && !isAttack && !nextField.piece) {
-                        if (nextRow + n1 <= -1 || nextRow + n1 >= 8) return 0; 
-                        if (nextColumn + n2 <= -1 || nextColumn + n2 >= 8) return 0;
-
+                    // If pawn is on first step and it's not attacking direction and there are no enemy pawns on path, 
+                    // pawn can move one or two fields forward depending if it is it's first or second move
+                    if (!steps && !isAttack && !nextField.piece) {
                         const nextNextField = board[nextRow + n1][nextColumn + n2];
                         maxSteps = !nextNextField.piece ? 2 : 1;
                         return [n1, n2];
                     }
 
-                    if (isAttack && nextField && kingsFields && kingsFields.includes(nextField)) {
+                    // If it is calculation for attacking king, and available fields in which king can move includes next field in which pawn can move return that next field
+                    if (isAttack && kingsFields && kingsFields.includes(nextField)) {
                         return [n1, n2]
                     }
 
-                    return ((isAttack && nextField && nextField.piece && nextField.piece.color !== color) || (!isAttack && !nextField.piece)) ? [n1, n2] : 0;
+                    return ((isAttack && nextField.piece && nextField.piece.color !== color) || (!isAttack && !nextField.piece)) ? [n1, n2] : 0;
                 }
 
                 return [isWhite ? [[ 0, 0, 0 ], [ 0, field, 0 ], [canAttackCheck(1, -1), canAttackCheck(1, 0, false), canAttackCheck(1, 1)]] : [
@@ -53,7 +54,7 @@ const getRules = (board, selectedField, kingsFields) => {
             }
         },
         rook: {
-            getPath: () => {
+            get path() {
                 const path = 
                 [
                     [ 0, [-1, 0], 0 ],
@@ -67,7 +68,7 @@ const getRules = (board, selectedField, kingsFields) => {
             }
         },
         knight: {
-            getPath: () => {
+            get path() {
                 const path = 
                 [
                     [ 0, [-2, -1], 0, [-2, 1], 0 ],
@@ -83,7 +84,7 @@ const getRules = (board, selectedField, kingsFields) => {
             }
         },
         bishop: {
-            getPath: () => {
+            get path() {
                 const path = 
                 [
                     [ [-1, -1], 0, [-1, 1] ],
@@ -97,7 +98,7 @@ const getRules = (board, selectedField, kingsFields) => {
             }
         },
         queen: {
-            getPath: () => {
+            get path() {
                 const path = 
                 [
                     [ [-1, -1], [1, 0], [-1, 1] ],
@@ -111,7 +112,7 @@ const getRules = (board, selectedField, kingsFields) => {
             }
         },
         king: {
-            getPath: () => {
+            get path() {
                 const path = 
                 [
                     [ [-1, -1], [1, 0], [-1, 1] ],
@@ -126,7 +127,7 @@ const getRules = (board, selectedField, kingsFields) => {
         }
     }
 
-    return rules[name].getPath();
+    return rules[name].path;
 };
 
 export const calculateAvailablePath = (board, field, returnKingFields, enemyPieces, canPathBeBlocked) => {
@@ -135,7 +136,7 @@ export const calculateAvailablePath = (board, field, returnKingFields, enemyPiec
 
     const calculatedData = {
         kingFields: [],
-        defendingPiece: [],
+        defendingPieces: [],
         canPathBeBlocked: []
     }
 
@@ -169,7 +170,7 @@ export const calculateAvailablePath = (board, field, returnKingFields, enemyPiec
 
                         if (color !== field.piece.color && !returnKingFields) {
                             if (enemyPieces && enemyPieces.includes(nextField)) {
-                                calculatedData.defendingPiece.push({ attacking: nextField, defending: field });
+                                calculatedData.defendingPieces.push({ attacking: nextField, defending: field });
                             } 
                             
                             if(!enemyPieces) {
@@ -316,6 +317,7 @@ const calculatePossibleCheckmate = (board, fields, checkmateColor) => {
     }
 }
 
+// Move selected piece to selected field, if there is enemy piece on that field remove it from board
 export const moveTo = (board, oldField, newField, skipStepsAdd = true) => {
     const [ newFieldRow, newFieldColumn ] = getFieldRowAndColumnIndex(String(newField.field));
     const [ oldFieldRow, oldFieldColumn ] = getFieldRowAndColumnIndex(String(oldField.field));
@@ -327,7 +329,7 @@ export const moveTo = (board, oldField, newField, skipStepsAdd = true) => {
     }
 
     if (!skipStepsAdd) {
-        oldField.piece.stepsTaken += 1
+        oldField.piece.steps += 1
     }
 
     board[newFieldRow][newFieldColumn].piece = oldField.piece;
@@ -359,16 +361,18 @@ export function checkIfPawnOnLastRow(mainStore, board, currentPlayer, pawnChange
 
 const canKingBeDefended = (board, color, enemyCheckmateFields) => {
 
-    const canBeDefended = board.map(row => row.filter(field => field.piece != null && field.piece.color === color && field.piece.name !== "king")).flat().reduce((acc, field) => {
+    // Get all friendly pieces that can attack or get in path of attacking enemy piece
+    const canBeDefended = board.map(row => row.filter(({ piece }) => piece != null && piece.color === color && piece.name !== "king")).flat().reduce((acc, field) => {
 
-        const { defendingPiece, canPathBeBlocked } = calculateAvailablePath(board, field, null, enemyCheckmateFields, true);
+        const { defendingPieces, canPathBeBlocked } = calculateAvailablePath(board, field, null, enemyCheckmateFields, true);
 
-        defendingPiece && acc.defenders.push(...defendingPiece);
+        defendingPieces && acc.defenders.push(...defendingPieces);
         canPathBeBlocked && acc.pathBlocking.push(...canPathBeBlocked)
 
         return acc;
-    }, { defenders: [], pathBlocking: []});
+    }, { defenders: [], pathBlocking: [] });
 
+    // If there are friendly pieces that can attack enemy pieces that have checkmate on friendly king, calculate if it will still be checkmate after that piece is removed
     if (canBeDefended.defenders.length > 0) {
 
         canBeDefended.defenders = canBeDefended.defenders.map(item => {
@@ -383,6 +387,7 @@ const canKingBeDefended = (board, color, enemyCheckmateFields) => {
         })
     } 
 
+    // If there are friendly pieces that can block path of attacking piece calculate if it will still be checkmate after path of attacking piece is blocked by friendly piece
     if (canBeDefended.pathBlocking.length > 0) {
 
         canBeDefended.pathBlocking = canBeDefended.pathBlocking.map(item => {
@@ -404,16 +409,20 @@ const canKingBeDefended = (board, color, enemyCheckmateFields) => {
 }
 
 const canKingEatEnemyPiece = (board, color, king, enemyPieces) => {
-    const { defendingPiece } = calculateAvailablePath(board, king, null, enemyPieces);
+    // Get all enemy pieces that can attack king
+    const { defendingPieces } = calculateAvailablePath(board, king, null, enemyPieces);
 
-    let canEatEnemyPiece = defendingPiece;
+    let attackingPieces = defendingPieces;
 
-    if (canEatEnemyPiece.length > 0) {
+    if (attackingPieces.length > 0) {
 
-        canEatEnemyPiece = canEatEnemyPiece.map(item => {
+        // For every attacking piece that is on field on which king can move, do calculation if it will stil be checkmate after king moves on that field
+        attackingPieces = attackingPieces.map(item => {
+            // Attacking piece is king, and defending piece is enemy piece which king can attack
             const { attacking, defending } = item;
             const newBoard = cloneDeep(board);
 
+            // Move king to field where is attacking piece and do calculation if it will still be checkmate after king eats that piece
             moveTo(newBoard, defending, attacking);
             const fieldsWithPieces = getAllFieldsWithPieces(newBoard);
 
@@ -422,20 +431,25 @@ const canKingEatEnemyPiece = (board, color, king, enemyPieces) => {
         })
     } 
 
-    return canEatEnemyPiece.length > 0 && canEatEnemyPiece.every(i => i === false);
+    return attackingPieces.length > 0 && attackingPieces.every(i => i === false);
 }
 
-const canKingMoveOnEmptyField = (board, color, king, emptyFields) => {
+const kingCantMoveOnEmptyFieldCheck = (board, color, king, emptyFields) => {
     const checkmateFieldName = color === "white" ? "checkmateWhite" : "checkmateBlack";
     const checkmatePathName = color === "white" ? "checkmatePathWhite" : "checkmatePathBlack";
 
+    // If there are no empty fields on which king can move or all empty fields are marked as checkmate fields ( which means that those fields are on path of enemies pieces) return true
     if (emptyFields.length === 0) return true;
     if (emptyFields.length > 0 && emptyFields.every(field => field[checkmateFieldName] || field[checkmatePathName])) return true;
 
+    // Available fields are all empty fields on which king can move that means all fields around king that are not on enemies path and that have no friendly or enemy pieces on it
     let availableFields = emptyFields.filter(field => !field[checkmateFieldName] && !field[checkmatePathName]);
 
+    // If there are available fields on which king can move we have to calculate if it will still be checkmate after king moves on one of those fields
     if (availableFields.length > 0) {
 
+        // For every available field on which king can move make check what will happen after king moves on that field, if king cam move on empty field, and there are no enemy pieces 
+        // that have checkmate on king after king moves, it means it is not checkmate anymore
         availableFields = availableFields.map(field => {
             const newBoard = cloneDeep(board);
 
@@ -456,16 +470,17 @@ const isCheckmate = (board, currentPlayer, color) => {
 
     const { kingFields, enemyCheckmateFields } = calculatePossibleCheckmate(board, fieldsWithPieces, color);
 
-    const emptyFields = kingFields.filter(field => !field.piece);
-    const enemyPieces = kingFields.filter(field => field.piece && field.piece.color !== color);
+    const emptyFields = kingFields.filter(field => !field.piece); // Get all empty fields on which king can move
+    const enemyPieces = kingFields.filter(field => field.piece && field.piece.color !== color); // Get all enemy pieces on fields on which king can move
     const king = fieldsWithPieces.find(({ piece }) => piece.name === "king" && piece.color === color);
 
-    if (enemyCheckmateFields.length === 0) return false;
-    if (currentPlayer === color && enemyCheckmateFields.length > 0) return true;
+    if (enemyCheckmateFields.length === 0) return false; // If there are no enemy pieces which can attack king, return checkmate == false
+    if (currentPlayer === color && enemyCheckmateFields.length > 0) return true; // If there are enemey pieces that can attack king and it's enemies move, return checkmate == true
 
-    const kingCantBeDefended = canKingBeDefended(board, color, enemyCheckmateFields);
+    // If it is our move, calculate if it will still be checkmate if king piece moves on another field, or check if king can be defended by friendly piece
+    const kingCantBeDefended = canKingBeDefended(board, color, enemyCheckmateFields); 
     const kingCantEatEnemyPiece = canKingEatEnemyPiece(board, color, king, enemyPieces);
-    const kingCantMoveOnEmptyField = canKingMoveOnEmptyField(board, color, king, emptyFields);
+    const kingCantMoveOnEmptyField = kingCantMoveOnEmptyFieldCheck(board, color, king, emptyFields);
 
     return kingCantMoveOnEmptyField && kingCantBeDefended && kingCantEatEnemyPiece;
 }
