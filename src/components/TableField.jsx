@@ -1,24 +1,50 @@
 import React from "react";
 import { observer } from "mobx-react";
+import classNames from "classnames";
 
 import "./TableFields.css";
 import * as images from "../assetes/pieces-icons";
 
 const TableField = observer(({ field, onFieldClick, movePiece, selected }) => {
-    const { piece, isAvailable, canAttack, checkmateWhite, checkmateBlack, checkmatePathWhite, checkmatePathBlack, mustMoveKing } = field;
+    const { piece, isAvailable, canAttack, checkmateWhite, checkmateBlack, checkmatePathWhite, checkmatePathBlack } = field;
 
     const name = piece ? piece.name + (piece.color[0].toUpperCase() + piece.color.slice(1)) : "";
 
+    console.log(field.field, checkmateBlack)
+
     return (
-        <div onClick={() => (isAvailable || canAttack) ? movePiece(field) : onFieldClick(field)} className="TableField" style={{ backgroundColor: mustMoveKing ? (checkmateWhite ? "orange" : "gold") : (canAttack ? "#FF6347fa" : (selected ? "#228B22aa" : (String(field.field)[2] == 2 ? "#9c9a9a" : "white")))}}>
+        <div 
+            onClick={() => (isAvailable || canAttack) ? movePiece(field) : onFieldClick(field)} 
+            className={"TableField " + classNames({
+                "whiteField": !checkmateWhite && !checkmateBlack && !canAttack && !selected && String(field.field)[2] != 2,
+                "blackField": !checkmateWhite && !checkmateBlack && !canAttack && !selected && String(field.field)[2] == 2,
+                "checkmateWhite": checkmateWhite,
+                "checkmateBlack": checkmateBlack,
+                "canAttack": canAttack,
+                "selected": selected
+
+            })}
+        >
 
             <div>
 
                 {piece && <img className="pieces" src={images[name]} alt="null" />}
 
-                {<div className="pathColors" style={{ backgroundColor: mustMoveKing ? "" : ((checkmateWhite || checkmatePathWhite) ? "orange" : ((checkmateBlack || checkmatePathBlack) ? "gold" : (isAvailable ? "#4169E1" : "")))}}></div>}
+                <div 
+                    className={"pathColors " + classNames({
+                        "checkmateWhite": checkmatePathWhite,
+                        "checkmateBlack": checkmatePathBlack,
+                        "isAvailable": isAvailable
+                    })}
+                >
+                </div>
                 
-                <span style={{ color: String(field.field)[2] == 2 ? "white" : "black" }} className="boardNum">{String(field.field)[0] + mapFieldNumToLetter(String(field.field)[1])}</span>
+                <span 
+                    style={{ color: String(field.field)[2] == 2 ? "white" : "black" }} 
+                    className="boardNum"
+                >
+                    {String(field.field)[0] + mapFieldNumToLetter(String(field.field)[1])}
+                </span>
 
             </div>
 

@@ -5,6 +5,18 @@ export const getFieldRowAndColumnIndex = (field) => [field[0] - 1, field[1] - 1]
 
 export const getAllFieldsWithPieces = (board) => board.map(row => row.filter(field => field.piece)).flat();
 
+const checkIfOutOfBound = (row, colum) => {
+    if (row <= -1 || row >= 8) return true; 
+    if (colum <= -1 || colum >= 8) return true;
+}
+
+// Path example with piece in middle
+// [
+//     [ [-1, -1], 0, [-1, 1] ],
+//     [ 0, bishop, 0 ],
+//     [ [1, -1], 0, [1, 1] ],
+// ]
+
 // Returns directions and number of steps in which selected piece can move
 const getRules = (board, selectedField, kingsFields) => {
     const { piece: { color, name, steps }, field } = selectedField;
@@ -25,8 +37,7 @@ const getRules = (board, selectedField, kingsFields) => {
                     const nextColumn = column + n2;
 
                     // If next row or column is beyond border return
-                    if (nextRow <= -1 || nextRow >= 8) return 0; 
-                    if (nextColumn <= -1 || nextColumn >= 8) return 0;
+                    if (checkIfOutOfBound(nextRow, nextColumn)) return 0;
 
                     const nextField = board[nextRow][nextColumn];
 
@@ -46,20 +57,16 @@ const getRules = (board, selectedField, kingsFields) => {
                     return ((isAttack && nextField.piece && nextField.piece.color !== color) || (!isAttack && !nextField.piece)) ? [n1, n2] : 0;
                 }
 
-                return [isWhite ? [[ 0, 0, 0 ], [ 0, field, 0 ], [canAttackCheck(1, -1), canAttackCheck(1, 0, false), canAttackCheck(1, 1)]] : [
-                    [ canAttackCheck(-1, -1), canAttackCheck(-1, 0, false), canAttackCheck(-1, 1)],
-                    [ 0, field, 0 ],
-                    [ 0, 0, 0 ]
-                ], maxSteps];
+                return [isWhite ? 
+                    [canAttackCheck(1, -1), canAttackCheck(1, 0, false), canAttackCheck(1, 1)] :
+                    [canAttackCheck(-1, -1), canAttackCheck(-1, 0, false), canAttackCheck(-1, 1)], maxSteps];
             }
         },
         rook: {
             get path() {
                 const path = 
                 [
-                    [ 0, [-1, 0], 0 ],
-                    [ [0, -1], field, [0, 1] ],
-                    [ 0, [1, 0], 0 ],
+                    [-1, 0], [0, -1], [0, 1], [1, 0]
                 ];
 
                 const maxSteps = 7;
@@ -71,11 +78,7 @@ const getRules = (board, selectedField, kingsFields) => {
             get path() {
                 const path = 
                 [
-                    [ 0, [-2, -1], 0, [-2, 1], 0 ],
-                    [ [-1, -2], 0, 0, 0, [-1, 2] ],
-                    [ 0, 0, field, 0, 0 ],
-                    [ [1, -2], 0, 0, 0, [1, 2] ],
-                    [ 0, [2, -1], 0, [2, 1], 0 ],
+                    [-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1],
                 ];
 
                 const maxSteps = 1;
@@ -85,11 +88,9 @@ const getRules = (board, selectedField, kingsFields) => {
         },
         bishop: {
             get path() {
-                const path = 
+                const path =  
                 [
-                    [ [-1, -1], 0, [-1, 1] ],
-                    [ 0, field, 0 ],
-                    [ [1, -1], 0, [1, 1] ],
+                    [-1, -1], [-1, 1], [1, -1], [1, 1],
                 ];
 
                 const maxSteps = 7;
@@ -101,9 +102,7 @@ const getRules = (board, selectedField, kingsFields) => {
             get path() {
                 const path = 
                 [
-                    [ [-1, -1], [1, 0], [-1, 1] ],
-                    [ [0, -1], field, [0, 1] ],
-                    [ [1, -1], [-1, 0], [1, 1] ],
+                    [-1, -1], [1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [-1, 0], [1, 1],
                 ];
 
                 const maxSteps = 7;
@@ -115,9 +114,7 @@ const getRules = (board, selectedField, kingsFields) => {
             get path() {
                 const path = 
                 [
-                    [ [-1, -1], [1, 0], [-1, 1] ],
-                    [ [0, -1], field, [0, 1] ],
-                    [ [1, -1], [-1, 0], [1, 1] ],
+                    [-1, -1], [1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [-1, 0], [1, 1],
                 ];
 
                 const maxSteps = 1;
@@ -142,63 +139,55 @@ export const calculateAvailablePath = (board, field, returnKingFields, enemyPiec
 
     // Loop over path arrays and for every direction in which piece can move, repeat that move until available steps for selected piece are maxed out, or until path hits other piece or border
     path.forEach(arr => {
-        // 0 means piece cant move in that direction
-        if (arr.every(f => f === 0)) return;
+            
+        // arr is array with two numbers representing direction in which piece can move, etc. [-1, -1] means current row - 1 and current column - 1
+        if (typeof arr === "object") {
+            // Selected piece position
+            let currentRow = row;
+            let currentColumn = column;
 
-        arr.forEach(c => {
-            // c is array with two numbers representing direction in which piece can move, etc. [-1, -1] means current row - 1 and current column - 1
-            if (typeof c === "object") {
+            const checkmateFieldName = field.piece.color === "white" ? "checkmateWhite" : "checkmateBlack";
 
-                // Selected piece position
-                let currentRow = row;
-                let currentColumn = column;
+            for (let step = 1; step <= maxSteps; step++) {
+                const nextRow = currentRow + arr[0];
+                const nextColumn = currentColumn + arr[1];
 
-                const checkmateFieldName = field.piece.color === "white" ? "checkmateWhite" : "checkmateBlack";
+                // If next row or column is beyond border return
+                if (checkIfOutOfBound(nextRow, nextColumn)) return;
 
-                for (let step = 1; step <= maxSteps; step++) {
-                    const nextRow = currentRow + c[0];
-                    const nextColumn = currentColumn + c[1];
+                const nextField = board[nextRow][nextColumn];
 
-                    // If next row or column is beyond border return
-                    if (nextRow <= -1 || nextRow >= 8) return; 
-                    if (nextColumn <= -1 || nextColumn >= 8) return;
+                if (nextField.piece != null) {
+                    const { color } = nextField.piece;
 
-                    const nextField = board[nextRow][nextColumn];
-
-                    if (nextField.piece != null) {
-                        const { color } = nextField.piece;
-
-                        if (color !== field.piece.color && !returnKingFields) {
-                            if (enemyPieces && enemyPieces.includes(nextField)) {
-                                calculatedData.defendingPieces.push({ attacking: nextField, defending: field });
-                            } 
-                            
-                            if(!enemyPieces) {
-                                nextField.canAttack = true;
-                            }
+                    if (color !== field.piece.color && !returnKingFields) {
+                        if (enemyPieces && enemyPieces.includes(nextField)) {
+                            calculatedData.defendingPieces.push({ attacking: nextField, defending: field });
+                        } 
+                        
+                        if(!enemyPieces) {
+                            nextField.canAttack = true;
                         }
-
-                        if (!returnKingFields) return;
                     }
-
-                    if (returnKingFields) {
-                        calculatedData.kingFields.push(nextField);
-                    } 
-
-                    if (canPathBeBlocked && nextField[checkmateFieldName]) {
-                        calculatedData.canPathBeBlocked.push({ checkmateField: nextField, defending: field });
-                    }
-
-                    if(!enemyPieces && !returnKingFields) {
-                        nextField.isAvailable = true;
-                    }
-
-                    currentRow = nextRow;
-                    currentColumn = nextColumn;
+                    if (!returnKingFields) return;
                 }
-            }
-        })
 
+                if (returnKingFields) {
+                    calculatedData.kingFields.push(nextField);
+                } 
+
+                if (canPathBeBlocked && nextField[checkmateFieldName]) {
+                    calculatedData.canPathBeBlocked.push({ checkmateField: nextField, defending: field });
+                }
+
+                if(!enemyPieces && !returnKingFields) {
+                    nextField.isAvailable = true;
+                }
+                
+                currentRow = nextRow;
+                currentColumn = nextColumn;
+            }
+        }
     });
 
     return calculatedData;
@@ -212,6 +201,7 @@ const calculatePossibleCheckmate = (board, fields, checkmateColor) => {
     const clearCalculatedPath = (path) => {
         path.forEach(field => {
             field[checkmateFieldName] = false;
+            field[checkmatePathName] = false;
         });
     }
 
@@ -229,84 +219,67 @@ const calculatePossibleCheckmate = (board, fields, checkmateColor) => {
         // Loop over path arrays and for every direction in which piece can move, repeat that move until available steps for selected piece are maxed out, or until path hits other piece or border
         path.forEach(arr => {
 
-            arr.forEach(c => {
-                // c is array with two numbers representing direction in which piece can move, etc. [-1, -1] means current row - 1 and current column - 1
-                if (typeof c === "object") {
+            // arr is array with two numbers representing direction in which piece can move, etc. [-1, -1] means current row - 1 and current column - 1
+            if (typeof arr === "object") {
 
-                    if (field.piece.name === "pawn" && arr.indexOf(c) === 1) return;
+                if (field.piece.name === "pawn" && arr.indexOf(arr) === 1) return;
 
-                    // Selected piece position
-                    let currentRow = row;
-                    let currentColumn = column;
+                // Selected piece position
+                let currentRow = row;
+                let currentColumn = column;
 
-                    const calculatedPath = [];
+                const calculatedPath = [];
 
-                    for (let step = 1; step <= maxSteps; step++) {
-                        const nextRow = currentRow + c[0];
-                        const nextColumn = currentColumn + c[1];
+                for (let step = 1; step <= maxSteps; step++) {
 
-                        // If next row or column is beyond border return
-                        if (nextRow <= -1 || nextRow >= 8) {
-                            clearCalculatedPath(calculatedPath);
-                            return;
-                        } 
-                        if (nextColumn <= -1 || nextColumn >= 8) {
-                            clearCalculatedPath(calculatedPath);
-                            return;
-                        } 
+                    const nextRow = currentRow + arr[0];
+                    const nextColumn = currentColumn + arr[1];
 
-                        const nextField = board[nextRow][nextColumn];
+                    // If next row or column is beyond border return
+                    if (checkIfOutOfBound(nextRow, nextColumn)) return clearCalculatedPath(calculatedPath);
 
-                        if (nextField.piece != null) {
-                            const { color, name } = nextField.piece;
+                    const nextField = board[nextRow][nextColumn];
 
-                            if (color === checkmateColor && name === "king") {
-                                nextField[checkmateFieldName] = true;
-                                nextField.mustMoveKing = true;
+                    if (nextField.piece != null) {
+                        const { color, name } = nextField.piece;
 
-                                enemyCheckmateFields.push(field);
-                                
-                                if (step < maxSteps) {
-                                    const nextNextRow = nextRow + c[0];
-                                    const nextNextColumn = nextColumn + c[1];
+                        if (color === checkmateColor && name === "king") {
+                            nextField[checkmateFieldName] = true;
+                            enemyCheckmateFields.push(field);
+                            
+                            if (step < maxSteps) {
+                                const nextNextRow = nextRow + arr[0];
+                                const nextNextColumn = nextColumn + arr[1];
 
-                                    // If next row or column is beyond border return
-                                    if (nextNextRow <= -1 || nextNextRow >= 8) {
-                                        return;
-                                    } 
-                                    if (nextNextColumn <= -1 || nextNextColumn >= 8) {
-                                        return;
-                                    } 
+                                // If next row or column is beyond border return
+                                if (checkIfOutOfBound(nextNextRow, nextNextColumn)) return;
 
-                                    const nextNextField = board[nextNextRow][nextNextColumn];
+                                const nextNextField = board[nextNextRow][nextNextColumn];
 
-                                    if (nextNextField && !nextNextField.piece && kingFields.includes(nextNextField)) {
-                                        nextNextField[checkmatePathName] = true;
-                                    }
+                                if (nextNextField && !nextNextField.piece && kingFields.includes(nextNextField)) {
+                                    nextNextField[checkmatePathName] = true;
                                 }
-
-                                return;
-                            } else {
-                                clearCalculatedPath(calculatedPath);
-                                return;
                             }
+                            return;
+                        } else {
+                            clearCalculatedPath(calculatedPath);
+                            return;
                         }
-
-                        if (!nextField[checkmateFieldName]) calculatedPath.push(nextField);
-
-                        nextField[checkmateFieldName] = true;
-
-                        if (kingFields.includes(nextField)) {
-                            nextField[checkmatePathName] = true;
-                        }
-
-                        if (step === maxSteps) clearCalculatedPath(calculatedPath);
-
-                        currentRow = nextRow;
-                        currentColumn = nextColumn;
                     }
+
+                    if (!nextField[checkmateFieldName]) calculatedPath.push(nextField);
+                    nextField[checkmatePathName] = true;
+
+                    if (kingFields.includes(nextField)) {
+                        nextField[checkmatePathName] = true;
+                    }
+
+                    if (step === maxSteps) clearCalculatedPath(calculatedPath);
+
+                    currentRow = nextRow;
+                    currentColumn = nextColumn;
                 }
-            })
+            }
         });
     })
 
@@ -431,10 +404,10 @@ const canKingEatEnemyPiece = (board, color, king, enemyPieces) => {
         })
     } 
 
-    return attackingPieces.length > 0 && attackingPieces.every(i => i === false);
+    return attackingPieces.length > 0 && attackingPieces.every(i => i === true);
 }
 
-const kingCantMoveOnEmptyFieldCheck = (board, color, king, emptyFields) => {
+const canKingMoveOnEmptyFieldCheck = (board, color, king, emptyFields) => {
     const checkmateFieldName = color === "white" ? "checkmateWhite" : "checkmateBlack";
     const checkmatePathName = color === "white" ? "checkmatePathWhite" : "checkmatePathBlack";
 
@@ -470,25 +443,25 @@ const isCheckmate = (board, currentPlayer, color) => {
 
     const { kingFields, enemyCheckmateFields } = calculatePossibleCheckmate(board, fieldsWithPieces, color);
 
+    if (enemyCheckmateFields.length === 0) return false; // If there are no enemy pieces which can attack king, return checkmate == false
+    if (currentPlayer === color && enemyCheckmateFields.length > 0) return true; // If there are enemey pieces that can attack king and it's enemies move, return checkmate == true
+
     const emptyFields = kingFields.filter(field => !field.piece); // Get all empty fields on which king can move
     const enemyPieces = kingFields.filter(field => field.piece && field.piece.color !== color); // Get all enemy pieces on fields on which king can move
     const king = fieldsWithPieces.find(({ piece }) => piece.name === "king" && piece.color === color);
 
-    if (enemyCheckmateFields.length === 0) return false; // If there are no enemy pieces which can attack king, return checkmate == false
-    if (currentPlayer === color && enemyCheckmateFields.length > 0) return true; // If there are enemey pieces that can attack king and it's enemies move, return checkmate == true
-
     // If it is our move, calculate if it will still be checkmate if king piece moves on another field, or check if king can be defended by friendly piece
     const kingCantBeDefended = canKingBeDefended(board, color, enemyCheckmateFields); 
     const kingCantEatEnemyPiece = canKingEatEnemyPiece(board, color, king, enemyPieces);
-    const kingCantMoveOnEmptyField = kingCantMoveOnEmptyFieldCheck(board, color, king, emptyFields);
+    const kingCantMoveOnEmptyField = canKingMoveOnEmptyFieldCheck(board, color, king, emptyFields);
 
     return kingCantMoveOnEmptyField && kingCantBeDefended && kingCantEatEnemyPiece;
 }
 
-export const checkIfCheckmate = (...args) => {
+export const checkIfCheckmate = (board, currentPlayer) => {
 
     return {
-        checkmateWhite: isCheckmate(...args, "white") && "White",
-        checkmateBlack: isCheckmate(...args, "black") && "Black",
+        checkmateWhite: isCheckmate(board, currentPlayer, "white") && "White",
+        checkmateBlack: isCheckmate(board, currentPlayer, "black") && "Black",
     }
 }

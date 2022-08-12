@@ -93,6 +93,12 @@
     color: white;
     font-size: 16px;
     margin-top: 5px;
+    transition: all 200ms;
+}
+
+.resetBtn:hover {
+    cursor: pointer;
+    background-color: #496edd;
 }
 
 .currentPlayerText {
@@ -111,6 +117,7 @@
 
 .pieces {
     width: 50px;
+    transition: all 250ms ease;
 }
 
 .boardBorder1 {

@@ -82,7 +82,6 @@ class Chess {
                 field.checkmateBlack = false;
                 field.checkmatePathBlack = false;
                 field.checkmatePathWhite = false;
-                field.mustMoveKing = false;
             };
         }));
 

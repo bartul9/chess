@@ -1,24 +1,48 @@
 
+.modal {
+    display: block;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0,0,0);
+    background-color: rgba(0,0,0,0.4);
+}
 
 .PawnChangeModal {
     padding: 30px;
     width: 500px;
     height: 300px;
     border: 2px solid black;
+    border-radius: 30px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: space-evenly;
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+}
+
+.PawnChangeModal .title {
+    margin-bottom: 25px;
+    width: fit-content;
 }
 
 .removedPiece:hover {
-    border-bottom: 3px solid lightgreen;
     cursor: pointer;
+    transform: scale(1.2);
 }
 
 .pieces {
     width: 50px;
-    padding: 1px;
+    padding: 3px;
+    margin: 2px;
+    transition: all ease 250ms;
 }
 
 

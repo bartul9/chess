@@ -38,6 +38,34 @@
     border-radius: 50%;
 }
 
+.checkmateWhite {
+    background-color: orange;
+}
+
+.checkmateBlack {
+    background-color: gold;
+}
+
+.canAttack {
+    background-color: #FF6347fa;
+}
+
+.isAvailable {
+    background-color: #4169E1;
+}
+
+.selected {
+    background-color: #228B22aa;
+}
+
+.whiteField {
+    background-color: white;
+}
+
+.blackField {
+    background-color: #9c9a9a;
+}
+
 @media (max-width: 750px) {
     .TableField {
         height: 75px;

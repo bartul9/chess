@@ -3,9 +3,10 @@ import { makeAutoObservable } from "mobx";
 
 class PawnChangeModalStore {
 
-    removedPieces = null;
+    removedPieces = [];
     currentField = null;
     onReturnPiece = null;
+    isOpen = false;
 
     constructor() {
         makeAutoObservable(this);
@@ -15,6 +16,7 @@ class PawnChangeModalStore {
         this.removedPieces = removedPieces;
         this.currentField = currentField;
         this.onReturnPiece = onReturnPiece;
+        this.isOpen = true;
     }
 
     onSelectPieceToReturn = (piece) => {
@@ -24,9 +26,10 @@ class PawnChangeModalStore {
     }
 
     close() {
-        this.removedPieces = null;
+        this.removedPieces = [];
         this.currentField = null;
         this.onReturnPiece = null;
+        this.isOpen = false;
     }
 }
 

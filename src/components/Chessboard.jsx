@@ -32,8 +32,9 @@ const Chessboard = observer(({ rootStore }) => {
     return (
         <>
             <div className="Chessboard">
-                {pawnChangeModal.removedPieces ? <PawnChangeModal store={pawnChangeModal} /> : 
+                <PawnChangeModal store={pawnChangeModal} />
                 <div className="boardContainer">
+                    
                     <div className="infoContainer">
                         <div className="title" ><img style={{ marginRight: 20 }} width={50} src={chessIcon} alt="" /> <h1>Chess</h1></div>
                         <div className="legend">
@@ -67,8 +68,10 @@ const Chessboard = observer(({ rootStore }) => {
                                 <span className="legendText">- Checkmate on king black</span>
                             </div>
                         </div>
+
                         {winner && <h2 style={ winnerStyling(winner) }>Winner is {winner} player</h2>}
                         {checkmate && <h2 style={ winnerStyling(checkmate) }>Checkmate {checkmate}</h2>}
+
                         <div className="currentPlayerTitle">
                             <span className="currentPlayerText">Current player:</span> <h2 style={{ marginLeft: "10px" }}>{currentPlayer.toUpperCase()}</h2>
                         </div>
@@ -104,7 +107,7 @@ const Chessboard = observer(({ rootStore }) => {
                             })}
                         </div>
                     </div>
-                </div>}
+                </div>
             </div>
         </>
         
