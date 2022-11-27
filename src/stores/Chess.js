@@ -1,7 +1,7 @@
 import { makeAutoObservable } from "mobx";
 
 import { board, randomizeBoard } from "../utils/board";
-import { calculateAvailablePath, checkIfCheckmate, moveTo, checkIfPawnOnLastRow } from "../utils/rules";
+import { calculateAvailablePath, moveTo, checkIfPawnOnLastRow } from "../utils/rules";
 import PawnChangeModalStore from "./PawnChangeModalStore";
 
 
@@ -15,7 +15,6 @@ class Chess {
     whiteRemovedPieces = [];
     blackRemovedPieces = [];
 
-    checkmate = null;
     winner = null;
 
     constructor() {
@@ -26,7 +25,7 @@ class Chess {
 
     // When clicked on any field, if piece exists on field calculate available path for selected piece, also clear board from previous paths
     onFieldClick = (field) => {
-        if (this.winner || this.checkmate) return;
+        if (this.winner) return;
 
         this.clearBoard();
         
@@ -42,30 +41,24 @@ class Chess {
         const { canAttack, isAvailable } = newField;
         if (!canAttack && !isAvailable) return;
 
-        const removedPiece = moveTo(this.board, this.selectedField, newField, false);
+        const removedPiece = moveTo(this.board, this.selectedField, newField);
+
+        this.moves++;
 
         // If removed piece is king, that means that current player is winner
         if (removedPiece) {
             if (removedPiece.name === "king") {
-                this.winner = this.currentPlayer === "White" ? "White" : "Black";
+                this.winner = this.currentPlayer;
             }
 
             this[removedPiece.color + "RemovedPieces"].push(removedPiece);
         }
 
-        this.clearBoard(true);
+        this.clearBoard();
 
         if (this.winner) return;
 
-        this.moves++;
-
-        const { checkmateWhite, checkmateBlack } = checkIfCheckmate(this.board, this.currentPlayer);
-
-        if (checkmateWhite || checkmateBlack) {
-            this.checkmate = checkmateWhite || checkmateBlack;
-        }
-
-        checkIfPawnOnLastRow(this, this.board, this.currentPlayer, this.pawnChangeModal);
+        checkIfPawnOnLastRow(this);
         this.onSwitchCurrentPlayer();
     }
 
@@ -73,16 +66,10 @@ class Chess {
         this.currentPlayer = this.currentPlayer === "white" ? "black" : "white";
     }
 
-    clearBoard(clearCheckmate) {
+    clearBoard() {
         this.board.forEach(row => row.forEach(field => {
             field.isAvailable = false;
             field.canAttack = false;
-            if (clearCheckmate) {
-                field.checkmateWhite = false;
-                field.checkmateBlack = false;
-                field.checkmatePathBlack = false;
-                field.checkmatePathWhite = false;
-            };
         }));
 
         this.selectedField = null;
@@ -96,7 +83,6 @@ class Chess {
         this.whiteRemovedPieces = [];
         this.blackRemovedPieces = [];
         this.winner = null;
-        this.checkmate = null;
     }
 
     randomizeBoardAndCheckForCheckmate = () => {
@@ -105,14 +91,6 @@ class Chess {
         this.board = randomizeBoard();
 
         this.currentPlayer = Math.random() > 0.5 ? "white" : "black";
-
-        const { checkmateWhite, checkmateBlack } = checkIfCheckmate(this.board, this.currentPlayer);
-
-        if (checkmateWhite || checkmateBlack) {
-            this.checkmate = checkmateWhite || checkmateBlack;
-        }
-
-        this.onSwitchCurrentPlayer();
     }
 
 }

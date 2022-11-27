@@ -6,23 +6,20 @@ import "./TableFields.css";
 import * as images from "../assetes/pieces-icons";
 
 const TableField = observer(({ field, onFieldClick, movePiece, selected }) => {
-    const { piece, isAvailable, canAttack, checkmateWhite, checkmateBlack, checkmatePathWhite, checkmatePathBlack } = field;
+    const { piece, isAvailable, canAttack, checkmate } = field;
 
     const name = piece ? piece.name + (piece.color[0].toUpperCase() + piece.color.slice(1)) : "";
-
-    console.log(field.field, checkmateBlack)
 
     return (
         <div 
             onClick={() => (isAvailable || canAttack) ? movePiece(field) : onFieldClick(field)} 
             className={"TableField " + classNames({
-                "whiteField": !checkmateWhite && !checkmateBlack && !canAttack && !selected && String(field.field)[2] != 2,
-                "blackField": !checkmateWhite && !checkmateBlack && !canAttack && !selected && String(field.field)[2] == 2,
-                "checkmateWhite": checkmateWhite,
-                "checkmateBlack": checkmateBlack,
+                "checkmateWhite": checkmate && piece && piece.color === "white",
+                "checkmateBlack": checkmate && piece && piece.color === "black",
+                "whiteField": !canAttack && !selected && String(field.field)[2] != 2 && !checkmate,
+                "blackField": !canAttack && !selected && String(field.field)[2] == 2 && !checkmate,
                 "canAttack": canAttack,
-                "selected": selected
-
+                "selected": selected,
             })}
         >
 
@@ -32,8 +29,6 @@ const TableField = observer(({ field, onFieldClick, movePiece, selected }) => {
 
                 <div 
                     className={"pathColors " + classNames({
-                        "checkmateWhite": checkmatePathWhite,
-                        "checkmateBlack": checkmatePathBlack,
                         "isAvailable": isAvailable
                     })}
                 >
